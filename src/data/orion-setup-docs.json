@@ -1,0 +1,27 @@
+{
+  "className": "ConsultViewSetup",
+  "properties": [
+    {
+      "name": "title",
+      "type": "string",
+      "visibility": "public"
+    },
+    {
+      "name": "internalState",
+      "type": "number",
+      "visibility": "private"
+    }
+  ],
+  "methods": [
+    {
+      "name": "open",
+      "type": "(id: string) => void",
+      "visibility": "public"
+    },
+    {
+      "name": "resetCache",
+      "type": "() => void",
+      "visibility": "protected"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import { getCanonicalComponents,
 	registerComponentsConfigWatcher } from './core/orionComponentRegistry';
 import { OrionDocsProvider } from './providers/OrionDocsProvider';
 import { OrionHoverProvider } from './providers/OrionHoverProvider';
+import { registerSetupHighlighting } from './providers/OrionSetupHighlightProvider';
 import { OrionComponentItem, OrionComponentsViewProvider } from './views/orionComponentsView';
 import { OrionDocsPanel } from './views/orionDocsPanel';
 
@@ -105,6 +106,8 @@ export function activate (context: vscode.ExtensionContext): void {
 			new OrionHoverProvider(docsProvider),
 		),
 	);
+
+	registerSetupHighlighting(context);
 
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeConfiguration(

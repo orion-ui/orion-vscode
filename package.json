@@ -71,6 +71,11 @@
           },
           "default": [],
           "description": "Optional override list of Orion component tags (kebab-case)."
+        },
+        "orion.setupHighlightColor": {
+          "type": "string",
+          "default": "rgb(156, 105, 252)",
+          "description": "Highlight color for the setup keyword in Vue files."
         }
       }
     }

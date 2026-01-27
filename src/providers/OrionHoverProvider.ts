@@ -2,8 +2,10 @@ import * as vscode from 'vscode';
 import { baseParse, NodeTypes, type RootNode } from '@vue/compiler-dom';
 import { parse as parseSfc } from '@vue/compiler-sfc';
 import { findNodeAtOffset, toKebabCase } from '../core/orionComponentDetector';
+import { findSetupTokenAtOffset } from '../core/orionSetupDetector';
 import { getCanonicalComponents } from '../core/orionComponentRegistry';
 import type { OrionComponentDocs, OrionPropDoc } from '../core/orionDocsService';
+import { buildSetupHoverMarkdown } from '../core/orionSetupDocs';
 import type { OrionDocsProvider } from './OrionDocsProvider';
 
 type ParsedTemplate = {
@@ -30,6 +32,11 @@ export class OrionHoverProvider implements vscode.HoverProvider {
 	private async provideHoverAsync (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Hover | null> {
 		if (token.isCancellationRequested) {
 			return null;
+		}
+
+		const setupHover = await this.provideSetupHoverAsync(document, position);
+		if (setupHover) {
+			return setupHover;
 		}
 		const parsed = this.getParsedTemplate(document);
 		if (!parsed) {
@@ -69,6 +76,22 @@ export class OrionHoverProvider implements vscode.HoverProvider {
 		markdown.appendMarkdown(`\n\n${this.buildViewDocsLink(componentName)}`);
 		markdown.isTrusted = true;
 
+		return new vscode.Hover(markdown);
+	}
+
+	private async provideSetupHoverAsync (document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Hover | null> {
+		const offset = document.offsetAt(position);
+		const match = findSetupTokenAtOffset(document.getText(), offset);
+		if (!match) {
+			return null;
+		}
+
+		const docs = this.docsProvider.getSetupDocsForDocument(document);
+		if (!docs) {
+			return null;
+		}
+
+		const markdown = new vscode.MarkdownString(buildSetupHoverMarkdown(docs), true);
 		return new vscode.Hover(markdown);
 	}
 

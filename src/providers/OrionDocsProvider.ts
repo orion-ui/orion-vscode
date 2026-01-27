@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { fetch } from 'undici';
 import bundledDocs from '../data/orion-docs.json';
 import { fetchOrionDocsAsync, type OrionComponentDocs } from '../core/orionDocsService';
+import { extractSetupDocsFromSfc, type OrionSetupDocs } from '../core/orionSetupDocs';
 
 export class OrionDocsProvider {
 
@@ -39,6 +40,11 @@ export class OrionDocsProvider {
 
 	clearCache (): void {
 		this.cache.clear();
+	}
+
+	getSetupDocsForDocument (document: vscode.TextDocument): OrionSetupDocs | null {
+		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+		return extractSetupDocsFromSfc(document.getText(), document.uri.fsPath, workspaceRoot);
 	}
 
 }
