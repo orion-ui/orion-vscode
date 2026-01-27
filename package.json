@@ -1,0 +1,100 @@
+{
+  "name": "orion-vscode",
+  "displayName": "Orion UI Companion",
+  "description": "VS Code companion to improve DX for Orion UI projects.",
+  "version": "0.0.1",
+  "publisher": "orion-ui",
+  "engines": {
+    "vscode": "^1.89.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:vue"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "orionComponentsView",
+          "name": "Orion Components",
+          "icon": "resources/orion.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "orion.refreshComponents",
+        "title": "Orion: Refresh Components"
+      },
+      {
+        "command": "orion.showComponentDocs",
+        "title": "Orion: Show Component Docs",
+        "icon": {
+          "light": "resources/globe.svg",
+          "dark": "resources/globe.svg"
+        }
+      }
+    ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "orion.showComponentDocs",
+          "when": "view == orionComponentsView && viewItem == orionComponent",
+          "group": "inline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Orion UI",
+      "properties": {
+        "orion.docsSource": {
+          "type": "string",
+          "enum": [
+            "remote",
+            "bundled"
+          ],
+          "default": "remote",
+          "description": "Source of Orion component documentation."
+        },
+        "orion.docsBaseUrl": {
+          "type": "string",
+          "default": "https://orion-ui.org",
+          "description": "Base URL for remote Orion docs API."
+        },
+        "orion.componentsList": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Optional override list of Orion component tags (kebab-case)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p .",
+    "lint": "eslint .",
+    "test": "mocha -r ts-node/register src/test/suite/**/*.test.ts",
+    "perf": "ts-node scripts/perf/benchmark.ts"
+  },
+  "devDependencies": {
+    "@orion.ui/orion-linter": "^1.0.5",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.11.30",
+    "@types/vscode": "^1.89.0",
+    "eslint": "^9.0.0",
+    "mocha": "^10.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@vue/compiler-dom": "^3.5.0",
+    "@vue/compiler-sfc": "^3.5.0",
+    "undici": "^6.18.0"
+  }
+}
