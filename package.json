@@ -1,7 +1,7 @@
 {
   "name": "orion-vscode",
   "displayName": "Orion UI Companion",
-  "description": "VS Code companion to improve DX for Orion UI projects.",
+  "description": "VSCode companion to improve DX for Orion UI projects.",
   "version": "0.0.1",
   "publisher": "orion-ui",
   "engines": {
