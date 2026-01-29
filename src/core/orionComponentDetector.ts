@@ -103,17 +103,22 @@ const collectTags = (template: string): string[] => {
 };
 
 export const detectOrionComponents = (sfcContent: string, canonicalList: Set<string>): OrionDetectionResult => {
-	const { descriptor } = parseSfc(sfcContent);
-	const templateContent = descriptor.template?.content;
+	try {
+		const { descriptor } = parseSfc(sfcContent);
+		const templateContent = descriptor.template?.content;
 
-	if (!templateContent) {
+		if (!templateContent) {
+			return { components: [] };
+		}
+
+		const tags = collectTags(templateContent);
+		const matches = tags
+			.map(tag => toKebabCase(tag))
+			.filter(tag => canonicalList.has(tag));
+
+		return { components: [...new Set(matches)].sort() };
+	}
+	catch (e) {
 		return { components: [] };
 	}
-
-	const tags = collectTags(templateContent);
-	const matches = tags
-		.map(tag => toKebabCase(tag))
-		.filter(tag => canonicalList.has(tag));
-
-	return { components: [...new Set(matches)].sort() };
 };
