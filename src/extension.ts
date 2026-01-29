@@ -1,12 +1,14 @@
 import * as vscode from 'vscode';
 import { detectOrionComponents } from './core/orionComponentDetector';
-import { getCanonicalComponents,
-	registerComponentsConfigWatcher } from './core/orionComponentRegistry';
+import { getCanonicalComponents, registerComponentsConfigWatcher } from './core/orionComponentRegistry';
+import { ServiceCodeManager } from './core/ServiceCodeManager';
+import { ServiceImplementationScanner } from './core/ServiceImplementationScanner';
 import { OrionDocsProvider } from './providers/OrionDocsProvider';
 import { OrionHoverProvider } from './providers/OrionHoverProvider';
 import { registerSetupHighlighting } from './providers/OrionSetupHighlightProvider';
 import { OrionComponentItem, OrionComponentsViewProvider } from './views/orionComponentsView';
 import { OrionDocsPanel } from './views/orionDocsPanel';
+import { ServiceApiHelperView } from './views/ServiceApiHelperView';
 
 const isVueDocument = (document: vscode.TextDocument): boolean =>
 	document.languageId === 'vue' || document.fileName.endsWith('.vue');
@@ -14,11 +16,14 @@ const isVueDocument = (document: vscode.TextDocument): boolean =>
 export function activate (context: vscode.ExtensionContext): void {
 	const docsProvider = new OrionDocsProvider();
 	const viewProvider = new OrionComponentsViewProvider(docsProvider);
+	const apiHelperProvider = new ServiceApiHelperView(context.extensionUri);
 
 	const treeView = vscode.window.createTreeView('orionComponentsView', { treeDataProvider: viewProvider });
+	const apiTreeView = vscode.window.createTreeView('orion.serviceApiHelper', { treeDataProvider: apiHelperProvider });
 
 	context.subscriptions.push(
 		treeView,
+		apiTreeView,
 		treeView.onDidExpandElement((event) => {
 			if (event.element instanceof OrionComponentItem) {
 				viewProvider.setComponentExpanded(event.element.componentName, true);
@@ -42,15 +47,27 @@ export function activate (context: vscode.ExtensionContext): void {
 		viewProvider.setComponents(result.components);
 	};
 
+	const updateApiImplementationsAsync = async (editor: vscode.TextEditor | undefined): Promise<void> => {
+		if (editor && ServiceImplementationScanner.isServiceFile(editor.document)) {
+			const methods = await ServiceImplementationScanner.getImplementedMethodsAsync(editor.document);
+			apiHelperProvider.setImplementedMethods(methods);
+		}
+		else {
+			apiHelperProvider.setImplementedMethods(new Set());
+		}
+	};
+
 	const activeEditor = vscode.window.activeTextEditor;
 	if (activeEditor) {
 		updateComponentsForDocument(activeEditor.document);
+		updateApiImplementationsAsync(activeEditor);
 	}
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(
 			(editor: vscode.TextEditor | undefined) => {
 				updateComponentsForDocument(editor?.document);
+				updateApiImplementationsAsync(editor);
 			},
 		),
 	);
@@ -59,6 +76,10 @@ export function activate (context: vscode.ExtensionContext): void {
 		vscode.workspace.onDidSaveTextDocument(
 			(document: vscode.TextDocument) => {
 				updateComponentsForDocument(document);
+				const editor = vscode.window.activeTextEditor;
+				if (editor && editor.document === document) {
+					updateApiImplementationsAsync(editor);
+				}
 			},
 		),
 	);
@@ -74,6 +95,12 @@ export function activate (context: vscode.ExtensionContext): void {
 		vscode.commands.registerCommand('orion.refreshComponents', () => {
 			const editor = vscode.window.activeTextEditor;
 			updateComponentsForDocument(editor?.document);
+		}),
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('orion.refreshApiViews', () => {
+			apiHelperProvider.refresh();
 		}),
 	);
 
@@ -98,6 +125,24 @@ export function activate (context: vscode.ExtensionContext): void {
 				OrionDocsPanel.show(componentName, docs, errorMessage);
 			},
 		),
+	);
+
+	// Implementation/removal commands
+	context.subscriptions.push(
+		vscode.commands.registerCommand('orion.implementApiMethod', async (item: any) => {
+			const editor = vscode.window.activeTextEditor;
+			if (editor && item.method) {
+				await ServiceCodeManager.implementMethodAsync(editor, item.apiName, item.method, item.isDefaultExport);
+				await updateApiImplementationsAsync(editor);
+			}
+		}),
+		vscode.commands.registerCommand('orion.removeApiMethod', async (item: any) => {
+			const editor = vscode.window.activeTextEditor;
+			if (editor && item.method) {
+				await ServiceCodeManager.removeMethodAsync(editor, item.apiName, item.method.name);
+				await updateApiImplementationsAsync(editor);
+			}
+		}),
 	);
 
 	context.subscriptions.push(

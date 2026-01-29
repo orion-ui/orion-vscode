@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import type { OrionDocsProvider } from '../providers/OrionDocsProvider';
 import { buildPropDescriptionNode, buildPropNodes, isEmptyNode } from '../core/orionComponentsTreeModel';
 import type { OrionPropDoc } from '../core/orionDocsService';
+import type { OrionDocsProvider } from '../providers/OrionDocsProvider';
 
 type OrionTreeItem = OrionComponentItem | OrionPropItem | OrionPropDescriptionItem | OrionEmptyItem;
 

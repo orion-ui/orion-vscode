@@ -15,7 +15,22 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "orion-architecture",
+          "title": "Orion Architecture",
+          "icon": "resources/orion.svg"
+        }
+      ]
+    },
     "views": {
+      "orion-architecture": [
+        {
+          "id": "orion.serviceApiHelper",
+          "name": "Service API Helper"
+        }
+      ],
       "explorer": [
         {
           "id": "orionComponentsView",
@@ -36,6 +51,21 @@
           "light": "resources/globe.svg",
           "dark": "resources/globe.svg"
         }
+      },
+      {
+        "command": "orion.implementApiMethod",
+        "title": "Orion: Implement API Method",
+        "icon": "$(add)"
+      },
+      {
+        "command": "orion.removeApiMethod",
+        "title": "Orion: Remove API Method",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "orion.refreshApiViews",
+        "title": "Orion: Refresh API Views",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -43,6 +73,16 @@
         {
           "command": "orion.showComponentDocs",
           "when": "view == orionComponentsView && viewItem == orionComponent",
+          "group": "inline"
+        },
+        {
+          "command": "orion.implementApiMethod",
+          "when": "view == orion.serviceApiHelper && viewItem == apiMethodUnimplemented",
+          "group": "inline"
+        },
+        {
+          "command": "orion.removeApiMethod",
+          "when": "view == orion.serviceApiHelper && viewItem == apiMethodImplemented",
           "group": "inline"
         }
       ]
