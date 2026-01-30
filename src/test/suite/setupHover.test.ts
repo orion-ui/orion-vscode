@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { suite, test } from 'mocha';
-import { buildSetupHoverMarkdown, extractSetupDocsFromSfc, type OrionSetupDocs } from '../../core/orionSetupDocs';
+import { OrionSetupDocsService, type OrionSetupDocs } from '../../core/OrionSetupDocs';
 
 suite('Orion setup hover markdown', () => {
 	test('renders class name and public members only', () => {
@@ -19,7 +19,7 @@ suite('Orion setup hover markdown', () => {
 			],
 		};
 
-		const markdown = buildSetupHoverMarkdown(docs);
+		const markdown = OrionSetupDocsService.buildSetupHoverMarkdown(docs);
 		assert.ok(markdown.includes('ConsultViewSetup'));
 		assert.ok(markdown.includes('title'));
 		assert.ok(markdown.includes('Public properties'));
@@ -59,7 +59,7 @@ suite('Orion setup docs extraction', () => {
 		].join('\n');
 		fs.writeFileSync(sfcPath, sfcContent, 'utf8');
 
-		const docs = extractSetupDocsFromSfc(sfcContent, sfcPath, tempDir);
+		const docs = OrionSetupDocsService.extractSetupDocsFromSfc(sfcContent, sfcPath, tempDir);
 		assert.ok(docs);
 		assert.strictEqual(docs?.className, 'MySetup');
 		assert.ok(docs?.properties?.some(prop => prop.name === 'title' && prop.visibility === 'public'));
@@ -81,7 +81,7 @@ suite('Orion setup docs extraction', () => {
 		].join('\n');
 		fs.writeFileSync(sfcPath, sfcContent, 'utf8');
 
-		const docs = extractSetupDocsFromSfc(sfcContent, sfcPath, tempDir);
+		const docs = OrionSetupDocsService.extractSetupDocsFromSfc(sfcContent, sfcPath, tempDir);
 		assert.strictEqual(docs, null);
 	});
 });

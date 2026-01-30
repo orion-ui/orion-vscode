@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 import { baseParse, NodeTypes, type RootNode } from '@vue/compiler-dom';
 import { parse as parseSfc } from '@vue/compiler-sfc';
-import { findNodeAtOffset } from '../core/orionComponentDetector';
+import { OrionComponentDetector } from '../core/OrionComponentDetector';
 import { toKebabCase } from '../utils/stringUtils';
-import { findSetupTokenAtOffset } from '../core/orionSetupDetector';
-import { getCanonicalComponents } from '../core/orionComponentRegistry';
-import type { OrionComponentDocs, OrionPropDoc } from '../core/orionDocsService';
-import { buildSetupHoverMarkdown } from '../core/orionSetupDocs';
+import { OrionSetupDetector } from '../core/OrionSetupDetector';
+import { OrionComponentRegistry } from '../core/OrionComponentRegistry';
+import type { OrionComponentDocs, OrionPropDoc } from '../core/OrionDocsService';
+import { OrionSetupDocsService } from '../core/OrionSetupDocs';
 import type { OrionDocsProvider } from './OrionDocsProvider';
 
 type ParsedTemplate = {
@@ -50,7 +50,7 @@ export class OrionHoverProvider implements vscode.HoverProvider {
 		}
 
 		const templateOffset = absoluteOffset - parsed.templateOffset;
-		const match = findNodeAtOffset(parsed.ast, templateOffset);
+		const match = OrionComponentDetector.findNodeAtOffset(parsed.ast, templateOffset);
 		if (!match) {
 			return null;
 		}
@@ -63,7 +63,7 @@ export class OrionHoverProvider implements vscode.HoverProvider {
 		}
 
 		const componentName = toKebabCase(element.tag);
-		const canonical = getCanonicalComponents();
+		const canonical = OrionComponentRegistry.getCanonicalComponents();
 		if (!canonical.has(componentName)) {
 			return null;
 		}
@@ -82,7 +82,7 @@ export class OrionHoverProvider implements vscode.HoverProvider {
 
 	private async provideSetupHoverAsync (document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Hover | null> {
 		const offset = document.offsetAt(position);
-		const match = findSetupTokenAtOffset(document.getText(), offset);
+		const match = OrionSetupDetector.findSetupTokenAtOffset(document.getText(), offset);
 		if (!match) {
 			return null;
 		}
@@ -92,7 +92,7 @@ export class OrionHoverProvider implements vscode.HoverProvider {
 			return null;
 		}
 
-		const markdown = new vscode.MarkdownString(buildSetupHoverMarkdown(docs), true);
+		const markdown = new vscode.MarkdownString(OrionSetupDocsService.buildSetupHoverMarkdown(docs), true);
 		return new vscode.Hover(markdown);
 	}
 

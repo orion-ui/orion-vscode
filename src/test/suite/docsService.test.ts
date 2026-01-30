@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { suite, test } from 'mocha';
-import { fetchOrionDocsAsync } from '../../core/orionDocsService';
+import { OrionDocsService } from '../../core/OrionDocsService';
 
 suite('Orion docs service', () => {
 	test('returns docs from fetcher', async () => {
@@ -10,7 +10,7 @@ suite('Orion docs service', () => {
 				'json': async () => ({ name: 'orion-button', props: [] }),
 			} as any);
 
-		const docs = await fetchOrionDocsAsync(
+		const docs = await OrionDocsService.fetchOrionDocsAsync(
 			'https://orion-ui.org',
 			'orion-button',
 			fetcherAsync,
@@ -23,7 +23,7 @@ suite('Orion docs service', () => {
 	test('returns null on non-ok response', async () => {
 		const fetcherAsync = async () => ({ ok: false } as any);
 
-		const docs = await fetchOrionDocsAsync(
+		const docs = await OrionDocsService.fetchOrionDocsAsync(
 			'https://orion-ui.org',
 			'orion-button',
 			fetcherAsync,

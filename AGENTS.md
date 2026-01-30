@@ -20,3 +20,5 @@
 
 - Keep core logic in `src/core` and view-specific logic in `src/views`.
 - Prefer type-only imports with `import type` when importing types.
+- In `src/core`, expose functionality through classes with static methods (no top-level exported functions).
+- Name core files with PascalCase to match their exported class names (e.g., `OrionDocsService.ts`).

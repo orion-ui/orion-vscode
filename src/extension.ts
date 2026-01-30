@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { detectOrionComponents } from './core/orionComponentDetector';
-import { getCanonicalComponents, registerComponentsConfigWatcher } from './core/orionComponentRegistry';
+import { OrionComponentDetector } from './core/OrionComponentDetector';
+import { OrionComponentRegistry } from './core/OrionComponentRegistry';
 import { ServiceCodeManager } from './core/ServiceCodeManager';
 import { ServiceImplementationScanner } from './core/ServiceImplementationScanner';
 import { OrionDocsProvider } from './providers/OrionDocsProvider';
@@ -42,8 +42,8 @@ export function activate (context: vscode.ExtensionContext): void {
 			return;
 		}
 
-		const canonical = getCanonicalComponents();
-		const result = detectOrionComponents(document.getText(), canonical);
+		const canonical = OrionComponentRegistry.getCanonicalComponents();
+		const result = OrionComponentDetector.detectOrionComponents(document.getText(), canonical);
 		viewProvider.setComponents(result.components);
 	};
 
@@ -84,7 +84,7 @@ export function activate (context: vscode.ExtensionContext): void {
 		),
 	);
 
-	registerComponentsConfigWatcher(context, () => {
+	OrionComponentRegistry.registerComponentsConfigWatcher(context, () => {
 		const editor = vscode.window.activeTextEditor;
 		if (editor) {
 			updateComponentsForDocument(editor.document);

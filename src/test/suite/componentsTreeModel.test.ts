@@ -1,15 +1,15 @@
 import assert from 'assert';
 import { suite, test } from 'mocha';
-import { buildComponentNodes, buildPropDescriptionNode, buildPropNodes } from '../../core/orionComponentsTreeModel';
+import { OrionComponentsTreeModel } from '../../core/OrionComponentsTreeModel';
 
 suite('Orion components tree model', () => {
 	test('builds component nodes from component list', () => {
-		const nodes = buildComponentNodes(['o-button', 'o-card']);
-		assert.deepStrictEqual(nodes.map(node => node.name), ['o-button', 'o-card']);
+		const nodes = OrionComponentsTreeModel.buildComponentNodes(['o-button', 'o-card']);
+		assert.deepStrictEqual(nodes.map((node: { name: string }) => node.name), ['o-button', 'o-card']);
 	});
 
 	test('returns empty node when no props are documented', () => {
-		const nodes = buildPropNodes('o-button', null);
+		const nodes = OrionComponentsTreeModel.buildPropNodes('o-button', null);
 		assert.strictEqual(nodes[0].type, 'empty');
 	});
 
@@ -18,7 +18,7 @@ suite('Orion components tree model', () => {
 			name: 'o-button',
 			props: [{ name: 'variant', type: 'string', description: 'Visual style.' }],
 		};
-		const nodes = buildPropNodes('o-button', docs);
+		const nodes = OrionComponentsTreeModel.buildPropNodes('o-button', docs);
 		assert.strictEqual(nodes[0].type, 'prop');
 		if (nodes[0].type === 'prop') {
 			assert.strictEqual(nodes[0].prop.name, 'variant');
@@ -27,7 +27,7 @@ suite('Orion components tree model', () => {
 	});
 
 	test('returns description node when prop has description', () => {
-		const detail = buildPropDescriptionNode('o-button', {
+		const detail = OrionComponentsTreeModel.buildPropDescriptionNode('o-button', {
 			name: 'variant',
 			type: 'string',
 			description: 'Visual style.',
@@ -36,7 +36,7 @@ suite('Orion components tree model', () => {
 	});
 
 	test('returns empty node when prop has no description', () => {
-		const detail = buildPropDescriptionNode('o-button', {
+		const detail = OrionComponentsTreeModel.buildPropDescriptionNode('o-button', {
 			name: 'variant',
 			type: 'string',
 		});

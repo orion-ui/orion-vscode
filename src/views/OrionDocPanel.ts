@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { OrionComponentDocs } from '../core/orionDocsService';
+import type { OrionComponentDocs } from '../core/OrionDocsService';
 
 export class OrionDocPanel {
 

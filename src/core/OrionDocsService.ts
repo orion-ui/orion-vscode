@@ -14,24 +14,28 @@ export interface OrionComponentDocs {
 	props: OrionPropDoc[]
 }
 
-export const fetchOrionDocsAsync = async (baseUrl: string, componentName: string, fetcher: Fetcher): Promise<OrionComponentDocs | null> => {
-	const url = `${baseUrl.replace(/\/$/, '')}/api/components/${componentName}.json`;
+export class OrionDocsService {
 
-	try {
-		const response = await fetcher(url, { headers: { Accept: 'application/json' } });
+	static async fetchOrionDocsAsync (baseUrl: string, componentName: string, fetcher: Fetcher): Promise<OrionComponentDocs | null> {
+		const url = `${baseUrl.replace(/\/$/, '')}/api/components/${componentName}.json`;
 
-		if (!response.ok) {
+		try {
+			const response = await fetcher(url, { headers: { Accept: 'application/json' } });
+
+			if (!response.ok) {
+				return null;
+			}
+
+			const payload = (await response.json()) as OrionComponentDocs;
+			if (!payload || !payload.name) {
+				return null;
+			}
+
+			return payload;
+		}
+		catch {
 			return null;
 		}
-
-		const payload = (await response.json()) as OrionComponentDocs;
-		if (!payload || !payload.name) {
-			return null;
-		}
-
-		return payload;
 	}
-	catch {
-		return null;
-	}
-};
+
+}

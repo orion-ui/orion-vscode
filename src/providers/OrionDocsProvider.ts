@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { fetch } from 'undici';
 import bundledDocs from '../data/orion-docs.json';
-import { fetchOrionDocsAsync, type OrionComponentDocs } from '../core/orionDocsService';
-import { extractSetupDocsFromSfc, type OrionSetupDocs } from '../core/orionSetupDocs';
+import { OrionDocsService, type OrionComponentDocs } from '../core/OrionDocsService';
+import { OrionSetupDocsService, type OrionSetupDocs } from '../core/OrionSetupDocs';
 
 export class OrionDocsProvider {
 
@@ -28,7 +28,7 @@ export class OrionDocsProvider {
 			const baseUrl = vscode.workspace
 				.getConfiguration('orion')
 				.get<string>('docsBaseUrl', 'https://orion-ui.org');
-			docs = await fetchOrionDocsAsync(baseUrl, key, fetch);
+			docs = await OrionDocsService.fetchOrionDocsAsync(baseUrl, key, fetch);
 		}
 
 		if (docs) {
@@ -44,7 +44,7 @@ export class OrionDocsProvider {
 
 	getSetupDocsForDocument (document: vscode.TextDocument): OrionSetupDocs | null {
 		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-		return extractSetupDocsFromSfc(document.getText(), document.uri.fsPath, workspaceRoot);
+		return OrionSetupDocsService.extractSetupDocsFromSfc(document.getText(), document.uri.fsPath, workspaceRoot);
 	}
 
 }

@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { suite, test } from 'mocha';
-import { detectOrionComponents } from '../../core/orionComponentDetector';
-import { detectSetupTokens } from '../../core/orionSetupDetector';
+import { OrionComponentDetector } from '../../core/OrionComponentDetector';
+import { OrionSetupDetector, type SetupTokenMatch } from '../../core/OrionSetupDetector';
 
 suite('Orion component detection', () => {
 	test('detects Orion components in Vue SFC', () => {
@@ -17,7 +17,7 @@ const foo = 1;
 </script>
 `;
 
-		const result = detectOrionComponents(sfc, new Set(['orion-button']));
+		const result = OrionComponentDetector.detectOrionComponents(sfc, new Set(['orion-button']));
 		assert.deepStrictEqual(result.components, ['orion-button']);
 	});
 
@@ -32,7 +32,7 @@ const value = 1;
 </script>
 `;
 
-		const matches = detectSetupTokens(sfc).filter(match => match.section === 'template');
+		const matches = OrionSetupDetector.detectSetupTokens(sfc).filter((match: SetupTokenMatch) => match.section === 'template');
 		assert.strictEqual(matches.length, 1);
 		const match = matches[0];
 		assert.strictEqual(sfc.slice(match.offset, match.offset + match.length), 'setup');
@@ -49,7 +49,7 @@ const setupper = 2;
 </script>
 `;
 
-		const matches = detectSetupTokens(sfc).filter(match => match.section === 'script');
+		const matches = OrionSetupDetector.detectSetupTokens(sfc).filter((match: SetupTokenMatch) => match.section === 'script');
 		assert.strictEqual(matches.length, 1);
 		const match = matches[0];
 		assert.strictEqual(sfc.slice(match.offset, match.offset + match.length), 'setup');

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { detectSetupTokens } from '../core/orionSetupDetector';
+import { OrionSetupDetector, type SetupTokenMatch } from '../core/OrionSetupDetector';
 
 const DEFAULT_SETUP_HIGHLIGHT = 'rgb(156, 105, 252)';
 
@@ -59,8 +59,8 @@ export const registerSetupHighlighting = (context: vscode.ExtensionContext): voi
 			return;
 		}
 
-		const matches = detectSetupTokens(editor.document.getText());
-		const ranges = matches.map((match) => {
+		const matches = OrionSetupDetector.detectSetupTokens(editor.document.getText());
+		const ranges = matches.map((match: SetupTokenMatch) => {
 			const start = editor.document.positionAt(match.offset);
 			const end = editor.document.positionAt(match.offset + match.length);
 			return new vscode.Range(start, end);

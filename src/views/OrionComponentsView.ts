@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { buildPropDescriptionNode, buildPropNodes, isEmptyNode } from '../core/orionComponentsTreeModel';
-import type { OrionPropDoc } from '../core/orionDocsService';
+import { OrionComponentsTreeModel } from '../core/OrionComponentsTreeModel';
+import type { OrionPropDoc } from '../core/OrionDocsService';
 import type { OrionDocsProvider } from '../providers/OrionDocsProvider';
 
 type OrionTreeItem = OrionComponentItem | OrionPropItem | OrionPropDescriptionItem | OrionEmptyItem;
@@ -60,10 +60,10 @@ export class OrionComponentsViewProvider implements vscode.TreeDataProvider<Orio
 
 		if (element instanceof OrionComponentItem) {
 			return this.docsProvider.getDocsAsync(element.componentName).then((docs) => {
-				const propNodes = buildPropNodes(element.componentName, docs);
+				const propNodes = OrionComponentsTreeModel.buildPropNodes(element.componentName, docs);
 
 				return propNodes.map(node =>
-					isEmptyNode(node)
+					OrionComponentsTreeModel.isEmptyNode(node)
 						? new OrionEmptyItem(node.message)
 						: new OrionPropItem(node.componentName, node.prop),
 				);
@@ -71,7 +71,7 @@ export class OrionComponentsViewProvider implements vscode.TreeDataProvider<Orio
 		}
 
 		if (element instanceof OrionPropItem) {
-			const detailNode = buildPropDescriptionNode(
+			const detailNode = OrionComponentsTreeModel.buildPropDescriptionNode(
 				element.componentName,
 				element.prop,
 			);

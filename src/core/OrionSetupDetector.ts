@@ -9,72 +9,76 @@ export interface SetupTokenMatch {
 	section: SetupTokenSection
 }
 
-const SETUP_TOKEN = 'setup';
+export class OrionSetupDetector {
 
-const collectTemplateMatches = (content: string, baseOffset: number): SetupTokenMatch[] => {
-	const matches: SetupTokenMatch[] = [];
-	const regex = /\bsetup\./g;
-	let match: RegExpExecArray | null;
-	while ((match = regex.exec(content)) !== null) {
-		matches.push({
-			offset: baseOffset + match.index,
-			length: SETUP_TOKEN.length,
-			section: 'template',
-		});
-	}
-	return matches;
-};
+	private static readonly setupToken = 'setup';
 
-const collectScriptMatches = (content: string, baseOffset: number): SetupTokenMatch[] => {
-	const matches: SetupTokenMatch[] = [];
-	const regex = /\bconst\s+setup\s*=/g;
-	let match: RegExpExecArray | null;
-	while ((match = regex.exec(content)) !== null) {
-		const setupIndex = match[0].indexOf(SETUP_TOKEN);
-		matches.push({
-			offset: baseOffset + match.index + setupIndex,
-			length: SETUP_TOKEN.length,
-			section: 'script',
-		});
-	}
-	return matches;
-};
-
-export const detectSetupTokens = (sfcContent: string): SetupTokenMatch[] => {
-	const { descriptor } = parseSfc(sfcContent);
-	const matches: SetupTokenMatch[] = [];
-
-	if (descriptor.template?.content && descriptor.template.loc) {
-		matches.push(
-			...collectTemplateMatches(
-				descriptor.template.content,
-				descriptor.template.loc.start.offset,
-			),
-		);
+	private static collectTemplateMatches (content: string, baseOffset: number): SetupTokenMatch[] {
+		const matches: SetupTokenMatch[] = [];
+		const regex = /\bsetup\./g;
+		let match: RegExpExecArray | null;
+		while ((match = regex.exec(content)) !== null) {
+			matches.push({
+				offset: baseOffset + match.index,
+				length: this.setupToken.length,
+				section: 'template',
+			});
+		}
+		return matches;
 	}
 
-	if (descriptor.script?.content && descriptor.script.loc) {
-		matches.push(
-			...collectScriptMatches(
-				descriptor.script.content,
-				descriptor.script.loc.start.offset,
-			),
-		);
+	private static collectScriptMatches (content: string, baseOffset: number): SetupTokenMatch[] {
+		const matches: SetupTokenMatch[] = [];
+		const regex = /\bconst\s+setup\s*=/g;
+		let match: RegExpExecArray | null;
+		while ((match = regex.exec(content)) !== null) {
+			const setupIndex = match[0].indexOf(this.setupToken);
+			matches.push({
+				offset: baseOffset + match.index + setupIndex,
+				length: this.setupToken.length,
+				section: 'script',
+			});
+		}
+		return matches;
 	}
 
-	if (descriptor.scriptSetup?.content && descriptor.scriptSetup.loc) {
-		matches.push(
-			...collectScriptMatches(
-				descriptor.scriptSetup.content,
-				descriptor.scriptSetup.loc.start.offset,
-			),
-		);
+	static detectSetupTokens (sfcContent: string): SetupTokenMatch[] {
+		const { descriptor } = parseSfc(sfcContent);
+		const matches: SetupTokenMatch[] = [];
+
+		if (descriptor.template?.content && descriptor.template.loc) {
+			matches.push(
+				...this.collectTemplateMatches(
+					descriptor.template.content,
+					descriptor.template.loc.start.offset,
+				),
+			);
+		}
+
+		if (descriptor.script?.content && descriptor.script.loc) {
+			matches.push(
+				...this.collectScriptMatches(
+					descriptor.script.content,
+					descriptor.script.loc.start.offset,
+				),
+			);
+		}
+
+		if (descriptor.scriptSetup?.content && descriptor.scriptSetup.loc) {
+			matches.push(
+				...this.collectScriptMatches(
+					descriptor.scriptSetup.content,
+					descriptor.scriptSetup.loc.start.offset,
+				),
+			);
+		}
+
+		return matches;
 	}
 
-	return matches;
-};
+	static findSetupTokenAtOffset (sfcContent: string, offset: number): SetupTokenMatch | null {
+		const matches = this.detectSetupTokens(sfcContent);
+		return matches.find(match => offset >= match.offset && offset <= match.offset + match.length) ?? null;
+	}
 
-export const findSetupTokenAtOffset = (sfcContent: string, offset: number): SetupTokenMatch | null => {
-	const matches = detectSetupTokens(sfcContent);
-	return matches.find(match => offset >= match.offset && offset <= match.offset + match.length) ?? null;
-};
+}
