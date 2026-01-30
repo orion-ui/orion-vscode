@@ -6,7 +6,7 @@ import { ServiceImplementationScanner } from './core/ServiceImplementationScanne
 import { OrionDocsProvider } from './providers/OrionDocsProvider';
 import { OrionHoverProvider } from './providers/OrionHoverProvider';
 import { registerSetupHighlighting } from './providers/OrionSetupHighlightProvider';
-import { OrionComponentItem, OrionComponentsViewProvider } from './views/OrionComponentsViews';
+import { OrionComponentItem, OrionComponentsViewProvider } from './views/OrionComponentsView';
 import { OrionDocPanel } from './views/OrionDocPanel';
 import { ServiceApiHelperView } from './views/ServiceApiHelperView';
 
