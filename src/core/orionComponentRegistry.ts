@@ -1,6 +1,6 @@
-import defaultComponents from '../data/orion-components.json';
-import type { ExtensionContext } from 'vscode';
 import * as vscode from 'vscode';
+import type { ExtensionContext } from 'vscode';
+import defaultComponents from '../data/orion-components.json';
 
 export const getCanonicalComponents = (): Set<string> => {
 	const configured = vscode.workspace

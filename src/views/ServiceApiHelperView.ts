@@ -4,13 +4,13 @@ import { ServiceImplementationScanner } from '../core/ServiceImplementationScann
 
 export class ServiceApiHelperView implements vscode.TreeDataProvider<ApiTreeItem> {
 
-	private _onDidChangeTreeData: vscode.EventEmitter<ApiTreeItem | undefined | void> = new vscode.EventEmitter<ApiTreeItem | undefined | void>();
+	private readonly _onDidChangeTreeData = new vscode.EventEmitter<ApiTreeItem | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<ApiTreeItem | undefined | void> = this._onDidChangeTreeData.event;
 
 	private apiFiles: ApiFile[] = [];
 	private implementedMethods: Set<string> = new Set(); // Key: ApiName.MethodName
-	private extensionUri: vscode.Uri;
-	private groupCache: { implemented: ApiFile[], available: ApiFile[] } | undefined;
+	private readonly extensionUri: vscode.Uri;
+	private groupCache: { implemented: ApiFile[], available: ApiFile[] } = { implemented: [], available: [] };
 
 	constructor (extensionUri: vscode.Uri) {
 		this.extensionUri = extensionUri;
@@ -55,9 +55,6 @@ export class ServiceApiHelperView implements vscode.TreeDataProvider<ApiTreeItem
 				items.push(new ApiGroupItem('Available APIs', 'available'));
 			}
 
-			// If no groups needed (everything in one), maybe just list files?
-			// But user asked for sections.
-			// To avoid state issues, we store the file lists for the groups
 			this.groupCache = { implemented: implementedFiles, available: availableFiles };
 
 			return items;
@@ -65,8 +62,8 @@ export class ServiceApiHelperView implements vscode.TreeDataProvider<ApiTreeItem
 
 		if (element instanceof ApiGroupItem) {
 			const files = element.status === 'implemented'
-				? this.groupCache?.implemented || []
-				: this.groupCache?.available || [];
+				? this.groupCache.implemented
+				: this.groupCache.available;
 			return files.map(file => new ApiFileItem(
 				file,
 				element.status === 'implemented'

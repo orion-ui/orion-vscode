@@ -3,21 +3,21 @@ import type * as vscode from 'vscode';
 
 export class ServiceImplementationScanner {
 
+	private static readonly apiMethodRegex = /\/\/\s*@api-method:\s*([a-zA-Z0-9_]+\.[a-zA-Z0-9_]+)/g;
+
 	/**
 	 * Scans the document for implemented API methods using AST and the // @api-method: ApiName.MethodName comment pattern.
 	 */
 	static async getImplementedMethodsAsync (document: vscode.TextDocument): Promise<Set<string>> {
 		const text = document.getText();
 		const implementedMethods = new Set<string>();
+		this.apiMethodRegex.lastIndex = 0;
 
-		// 1. Scan for comments (Regex is fine/better for loose comments)
-		const apiMethodRegex = /\/\/\s*@api-method:\s*([a-zA-Z0-9_]+\.[a-zA-Z0-9_]+)/g;
 		let match;
-		while ((match = apiMethodRegex.exec(text)) !== null) {
+		while ((match = this.apiMethodRegex.exec(text)) !== null) {
 			implementedMethods.add(match[1]);
 		}
 
-		// 2. Scan for actual usage using AST
 		const sourceFile = ts.createSourceFile(
 			document.fileName,
 			text,

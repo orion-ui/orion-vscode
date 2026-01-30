@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { baseParse, NodeTypes, type RootNode } from '@vue/compiler-dom';
 import { parse as parseSfc } from '@vue/compiler-sfc';
-import { findNodeAtOffset, toKebabCase } from '../core/orionComponentDetector';
+import { findNodeAtOffset } from '../core/orionComponentDetector';
+import { toKebabCase } from '../utils/stringUtils';
 import { findSetupTokenAtOffset } from '../core/orionSetupDetector';
 import { getCanonicalComponents } from '../core/orionComponentRegistry';
 import type { OrionComponentDocs, OrionPropDoc } from '../core/orionDocsService';

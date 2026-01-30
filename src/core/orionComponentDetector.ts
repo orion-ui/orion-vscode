@@ -1,5 +1,6 @@
 import { parse as parseSfc } from '@vue/compiler-sfc';
 import { baseParse, NodeTypes } from '@vue/compiler-dom';
+import { toKebabCase } from '../utils/stringUtils';
 
 export interface OrionDetectionResult {
 	components: string[]
@@ -9,19 +10,6 @@ export interface NodeMatch {
 	node: any
 	parent?: any
 }
-
-export const toKebabCase = (value: string): string => {
-	if (!value) {
-		return value;
-	}
-	if (value.includes('-')) {
-		return value.toLowerCase();
-	}
-	return value
-		.replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-		.replace(/_/g, '-')
-		.toLowerCase();
-};
 
 const isOffsetWithin = (node: any, offset: number): boolean => {
 	if (!node?.loc) {
@@ -118,7 +106,7 @@ export const detectOrionComponents = (sfcContent: string, canonicalList: Set<str
 
 		return { components: [...new Set(matches)].sort() };
 	}
-	catch (e) {
+	catch {
 		return { components: [] };
 	}
 };

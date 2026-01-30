@@ -85,7 +85,6 @@ export class ServiceCodeManager {
 						if (leadingText.includes(marker)) {
 							return node;
 						}
-						// Keep searching for the specific marker match
 					}
 					else {
 						return node;
@@ -128,8 +127,8 @@ export class ServiceCodeManager {
 				const match = importRegex.exec(cleanText);
 				if (match) {
 					const importStart = match.index;
-					const __lineEnd = cleanText.indexOf('\n', importStart);
-					const importEnd = __lineEnd !== -1 ? __lineEnd + 1 : cleanText.length;
+					const lineEnd = cleanText.indexOf('\n', importStart);
+					const importEnd = lineEnd !== -1 ? lineEnd + 1 : cleanText.length;
 
 					if (importStart < startIndex) {
 						editBuilder.delete(new vscode.Range(

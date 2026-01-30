@@ -8,6 +8,9 @@ schema: spec-driven
 #     Tech stack: TypeScript, React, Node.js
 #     We use conventional commits
 #     Domain: e-commerce platform
+context: |
+  Always read and follow AGENTS.md for code style, structure, and utility guidance.
+  Domain: VSCode extension for Orion UI framework.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

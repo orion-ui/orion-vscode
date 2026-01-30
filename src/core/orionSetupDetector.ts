@@ -76,6 +76,5 @@ export const detectSetupTokens = (sfcContent: string): SetupTokenMatch[] => {
 
 export const findSetupTokenAtOffset = (sfcContent: string, offset: number): SetupTokenMatch | null => {
 	const matches = detectSetupTokens(sfcContent);
-	return matches.find(match => offset >= match.offset && offset <= match.offset + match.length)
-	  ?? null;
+	return matches.find(match => offset >= match.offset && offset <= match.offset + match.length) ?? null;
 };

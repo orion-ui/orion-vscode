@@ -1,14 +1,21 @@
 import type { OrionComponentDocs, OrionPropDoc } from './orionDocsService';
 
-export const buildComponentNodes = (components: string[]) => {
-	return components.map(component => ({ type: 'component' as const, name: component }));
+type ComponentNode = { type: 'component', name: string };
+type PropNode = { type: 'prop', componentName: string, prop: OrionPropDoc };
+type EmptyNode = { type: 'empty', componentName: string, message: string };
+type PropDescriptionNode = { type: 'propDescription', componentName: string, propName: string, description: string };
+
+export type OrionTreeNode = ComponentNode | PropNode | EmptyNode | PropDescriptionNode;
+
+export const buildComponentNodes = (components: string[]): ComponentNode[] => {
+	return components.map(component => ({ type: 'component', name: component }));
 };
 
-export const buildPropNodes = (componentName: string, docs: OrionComponentDocs | null) => {
+export const buildPropNodes = (componentName: string, docs: OrionComponentDocs | null): Array<PropNode | EmptyNode> => {
 	if (!docs || !docs.props || docs.props.length === 0) {
 		return [
 			{
-				type: 'empty' as const,
+				type: 'empty',
 				componentName,
 				message: 'No props documented.',
 			},
@@ -16,31 +23,31 @@ export const buildPropNodes = (componentName: string, docs: OrionComponentDocs |
 	}
 
 	return docs.props.map(prop => ({
-		type: 'prop' as const,
+		type: 'prop',
 		componentName,
 		prop,
 	}));
 };
 
-export const buildPropDescriptionNode = (componentName: string, prop: OrionPropDoc) => {
+export const buildPropDescriptionNode = (componentName: string, prop: OrionPropDoc): PropDescriptionNode | EmptyNode => {
 	const description = prop.description?.trim();
 
 	if (!description) {
 		return {
-			type: 'empty' as const,
+			type: 'empty',
 			componentName,
 			message: 'No description available.',
 		};
 	}
 
 	return {
-		type: 'propDescription' as const,
+		type: 'propDescription',
 		componentName,
 		propName: prop.name,
 		description,
 	};
 };
 
-export const isEmptyNode = (node: { type: string }): node is { type: 'empty' } => {
+export const isEmptyNode = (node: OrionTreeNode): node is EmptyNode => {
 	return node.type === 'empty';
 };
