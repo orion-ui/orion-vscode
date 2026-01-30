@@ -6,8 +6,8 @@ import { ServiceImplementationScanner } from './core/ServiceImplementationScanne
 import { OrionDocsProvider } from './providers/OrionDocsProvider';
 import { OrionHoverProvider } from './providers/OrionHoverProvider';
 import { registerSetupHighlighting } from './providers/OrionSetupHighlightProvider';
-import { OrionComponentItem, OrionComponentsViewProvider } from './views/orionComponentsView';
-import { OrionDocsPanel } from './views/orionDocsPanel';
+import { OrionComponentItem, OrionComponentsViewProvider } from './views/OrionComponentsViews';
+import { OrionDocPanel } from './views/OrionDocPanel';
 import { ServiceApiHelperView } from './views/ServiceApiHelperView';
 
 const isVueDocument = (document: vscode.TextDocument): boolean =>
@@ -122,7 +122,7 @@ export function activate (context: vscode.ExtensionContext): void {
 				const errorMessage = docs
 					? undefined
 					: 'Documentation unavailable for this component.';
-				OrionDocsPanel.show(componentName, docs, errorMessage);
+				OrionDocPanel.show(componentName, docs, errorMessage);
 			},
 		),
 	);

@@ -1,23 +1,23 @@
 import * as vscode from 'vscode';
 import type { OrionComponentDocs } from '../core/orionDocsService';
 
-export class OrionDocsPanel {
+export class OrionDocPanel {
 
-	private static currentPanel: OrionDocsPanel | undefined;
+	private static currentPanel: OrionDocPanel | undefined;
 
 	private readonly panel: vscode.WebviewPanel;
 
 	private constructor (panel: vscode.WebviewPanel) {
 		this.panel = panel;
 		this.panel.onDidDispose(() => {
-			OrionDocsPanel.currentPanel = undefined;
+			OrionDocPanel.currentPanel = undefined;
 		});
 	}
 
 	static show (componentName: string, docs: OrionComponentDocs | null, errorMessage?: string): void {
-		if (OrionDocsPanel.currentPanel) {
-			OrionDocsPanel.currentPanel.render(componentName, docs, errorMessage);
-			OrionDocsPanel.currentPanel.panel.reveal();
+		if (OrionDocPanel.currentPanel) {
+			OrionDocPanel.currentPanel.render(componentName, docs, errorMessage);
+			OrionDocPanel.currentPanel.panel.reveal();
 			return;
 		}
 
@@ -28,8 +28,8 @@ export class OrionDocsPanel {
 			{ enableScripts: false },
 		);
 
-		OrionDocsPanel.currentPanel = new OrionDocsPanel(panel);
-		OrionDocsPanel.currentPanel.render(componentName, docs, errorMessage);
+		OrionDocPanel.currentPanel = new OrionDocPanel(panel);
+		OrionDocPanel.currentPanel.render(componentName, docs, errorMessage);
 	}
 
 	private render (componentName: string, docs: OrionComponentDocs | null, errorMessage?: string): void {
