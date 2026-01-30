@@ -73,24 +73,13 @@ export class ServiceApiHelperView implements vscode.TreeDataProvider<ApiTreeItem
 		}
 
 		if (element instanceof ApiFileItem) {
-			// Sort methods: implemented first, then alphabetical
-			const sortedMethods = [...element.apiFile.methods].sort((a, b) => {
-				const aKey = `${element.apiFile.name}.${a.name}`;
-				const bKey = `${element.apiFile.name}.${b.name}`;
-				const aImpl = this.implementedMethods.has(aKey);
-				const bImpl = this.implementedMethods.has(bKey);
-
-				if (aImpl && !bImpl) return -1;
-				if (!aImpl && bImpl) return 1;
-				return a.name.localeCompare(b.name);
-			});
-
-			return sortedMethods.map(method => new ApiMethodItem(
+			return element.apiFile.methods.map(method => new ApiMethodItem(
 				element.apiFile.name,
 				method,
 				this.implementedMethods.has(`${element.apiFile.name}.${method.name}`),
 				this.extensionUri,
 				element.apiFile.isDefaultExport,
+				element.apiFile.path,
 			));
 		}
 		return [];
@@ -131,6 +120,7 @@ export class ApiMethodItem extends vscode.TreeItem {
 		public readonly isImplemented: boolean,
 		public readonly extensionUri: vscode.Uri,
 		public readonly isDefaultExport: boolean,
+		public readonly apiFilePath: string,
 	) {
 		super(method.name, vscode.TreeItemCollapsibleState.None);
 		this.description = method.params ? `(${method.params})` : '()';

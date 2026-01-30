@@ -105,6 +105,20 @@ export function activate (context: vscode.ExtensionContext): void {
 	);
 
 	context.subscriptions.push(
+		vscode.commands.registerCommand('orion.revealApiMethod', async (item: any) => {
+			if (typeof item?.method?.start !== 'number' || typeof item?.apiFilePath !== 'string') {
+				return;
+			}
+			const document = await vscode.workspace.openTextDocument(item.apiFilePath);
+			const editor = await vscode.window.showTextDocument(document, { preview: false });
+			const position = document.positionAt(item.method.start);
+			const range = new vscode.Range(position, position);
+			editor.selection = new vscode.Selection(position, position);
+			editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+		}),
+	);
+
+	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'orion.showComponentDocs',
 			async (componentArg: string | { componentName?: string } | undefined) => {

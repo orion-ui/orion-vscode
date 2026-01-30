@@ -8,6 +8,8 @@ export interface ApiMethod {
 	params: string
 	returnType: string
 	fullSignature: string
+	start: number
+	end: number
 }
 
 export interface ApiFile {
@@ -75,6 +77,7 @@ export class ServiceApiScanner {
 						}
 
 						const start = member.getStart(sourceFile);
+						const end = member.getEnd();
 						const bodyStart = member.body?.getStart(sourceFile) ?? member.end;
 						const declText = content.substring(start, bodyStart).trim();
 						const fullSignature = declText.endsWith('{') ? declText.slice(0, -1).trim() : declText;
@@ -84,6 +87,8 @@ export class ServiceApiScanner {
 							params,
 							returnType,
 							fullSignature,
+							start,
+							end,
 						});
 					}
 				});

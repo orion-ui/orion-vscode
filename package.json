@@ -67,6 +67,11 @@
         "command": "orion.refreshApiViews",
         "title": "Orion: Refresh API Views",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "orion.revealApiMethod",
+        "title": "Orion: Go to API Method",
+        "icon": "$(symbol-method)"
       }
     ],
     "menus": {
@@ -85,6 +90,16 @@
           "command": "orion.removeApiMethod",
           "when": "view == orion.serviceApiHelper && viewItem == apiMethodImplemented",
           "group": "inline"
+        },
+        {
+          "command": "orion.revealApiMethod",
+          "when": "view == orion.serviceApiHelper && viewItem == apiMethodImplemented",
+          "group": "navigation"
+        },
+        {
+          "command": "orion.revealApiMethod",
+          "when": "view == orion.serviceApiHelper && viewItem == apiMethodUnimplemented",
+          "group": "navigation"
         }
       ]
     },
