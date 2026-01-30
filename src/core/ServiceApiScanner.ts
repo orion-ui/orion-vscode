@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as ts from 'typescript';
 import * as vscode from 'vscode';
 
 export interface ApiMethod {
@@ -28,12 +29,21 @@ export class ServiceApiScanner {
 		for (const file of files) {
 			try {
 				const content = await fs.promises.readFile(file.fsPath, 'utf8');
-				const methods = this.extractMethods(content);
+				const sourceFile = ts.createSourceFile(
+					file.fsPath,
+					content,
+					ts.ScriptTarget.Latest,
+					true,
+				);
+
+				const methods = this.extractMethods(sourceFile, content);
+				const isDefaultExport = this.checkDefaultExport(sourceFile);
+
 				apiFiles.push({
 					name: path.basename(file.fsPath, '.ts'),
 					path: file.fsPath,
 					methods,
-					isDefaultExport: content.includes('export default class'),
+					isDefaultExport,
 				});
 			}
 			catch (err) {
@@ -46,29 +56,62 @@ export class ServiceApiScanner {
 	}
 
 	/**
-	 * Extracts static methods from an API class
+	 * Extracts static methods from an API class using AST
 	 */
-	private static extractMethods (content: string): ApiMethod[] {
+	private static extractMethods (sourceFile: ts.SourceFile, content: string): ApiMethod[] {
 		const methods: ApiMethod[] = [];
-		// Regex to find: static [async] methodName(params) [: returnType]
-		// Supports basic signatures. For more complex ones, an AST parser would be better.
-		const methodRegex = /static\s+(async\s+)?([a-zA-Z0-9_]+)\s*\(([^)]*)\)\s*(:\s*([^{]+))?/g;
 
-		let match;
-		while ((match = methodRegex.exec(content)) !== null) {
-			const name = match[2];
-			const params = match[3].trim();
-			const returnType = match[5]?.trim() || 'any';
-			const fullSignature = match[0].split('{')[0].trim();
+		const visit = (node: ts.Node) => {
+			if (ts.isClassDeclaration(node)) {
+				node.members.forEach((member) => {
+					if (ts.isMethodDeclaration(member) && this.isStatic(member)) {
+						const name = member.name.getText(sourceFile);
 
-			methods.push({
-				name,
-				params,
-				returnType,
-				fullSignature,
-			});
-		}
+						const params = member.parameters.map(p => p.getText(sourceFile)).join(', ');
+
+						let returnType = 'any';
+						if (member.type) {
+							returnType = member.type.getText(sourceFile);
+						}
+
+						const start = member.getStart(sourceFile);
+						const bodyStart = member.body?.getStart(sourceFile) ?? member.end;
+						const declText = content.substring(start, bodyStart).trim();
+						const fullSignature = declText.endsWith('{') ? declText.slice(0, -1).trim() : declText;
+
+						methods.push({
+							name,
+							params,
+							returnType,
+							fullSignature,
+						});
+					}
+				});
+			}
+			ts.forEachChild(node, visit);
+		};
+
+		visit(sourceFile);
 		return methods;
+	}
+
+	private static isStatic (member: ts.MethodDeclaration): boolean {
+		return member.modifiers?.some(m => m.kind === ts.SyntaxKind.StaticKeyword) ?? false;
+	}
+
+	private static checkDefaultExport (sourceFile: ts.SourceFile): boolean {
+		let isDefault = false;
+		ts.forEachChild(sourceFile, (node) => {
+			if (ts.isClassDeclaration(node)) {
+				if (node.modifiers?.some(m => m.kind === ts.SyntaxKind.DefaultKeyword)) {
+					isDefault = true;
+				}
+			}
+			else if (ts.isExportAssignment(node)) {
+				isDefault = true;
+			}
+		});
+		return isDefault;
 	}
 
 }

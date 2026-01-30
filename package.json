@@ -28,7 +28,8 @@
       "orion-architecture": [
         {
           "id": "orion.serviceApiHelper",
-          "name": "Service API Helper"
+          "name": "Service API Helper",
+          "icon": "resources/orion.svg"
         }
       ],
       "explorer": [
@@ -134,12 +135,12 @@
     "@types/vscode": "^1.89.0",
     "eslint": "^9.0.0",
     "mocha": "^10.4.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "ts-node": "^10.9.2"
   },
   "dependencies": {
     "@vue/compiler-dom": "^3.5.0",
     "@vue/compiler-sfc": "^3.5.0",
-    "undici": "^6.18.0"
+    "undici": "^6.18.0",
+    "typescript": "^5.4.5"
   }
 }
