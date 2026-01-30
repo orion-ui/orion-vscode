@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ServiceApiScanner, type ApiFile, type ApiMethod } from '../core/ServiceApiScanner';
+import { ServiceImplementationScanner } from '../core/ServiceImplementationScanner';
 
 export class ServiceApiHelperView implements vscode.TreeDataProvider<ApiTreeItem> {
 
@@ -22,6 +23,13 @@ export class ServiceApiHelperView implements vscode.TreeDataProvider<ApiTreeItem
 	// eslint-disable-next-line orion-rules/async-suffix
 	async getChildren (element?: ApiTreeItem | ApiGroupItem): Promise<(ApiTreeItem | ApiGroupItem)[]> {
 		if (!element) {
+			const activeEditor = vscode.window.activeTextEditor;
+			if (!activeEditor || !ServiceImplementationScanner.isServiceFile(activeEditor.document)) {
+				this.apiFiles = [];
+				this.groupCache = { implemented: [], available: [] };
+				return [];
+			}
+
 			this.apiFiles = await ServiceApiScanner.scanForApisAsync();
 
 			const implementedFiles: ApiFile[] = [];

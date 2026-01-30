@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as ts from 'typescript';
 import { type ApiMethod } from './ServiceApiScanner';
 
 export class ServiceCodeManager {
@@ -10,17 +11,13 @@ export class ServiceCodeManager {
 		const document = editor.document;
 		const text = document.getText();
 
-		// Prepare boilerplate
 		const methodName = this.determineMethodName(text, apiName, method);
 		const methodCode = this.generateMethodBoilerplate(apiName, method, methodName);
-		// Use alias path for import
 		const importStatement = isDefaultExport
 			? `import ${apiName} from '@/api/${apiName}';`
 			: `import { ${apiName} } from '@/api/${apiName}';`;
 
 		await editor.edit((editBuilder) => {
-			// Add import if missing
-			// Check if import exists (robust check)
 			const importRegex = new RegExp(`import\\s+(?:\\{[^}]*\\b${apiName}\\b[^}]*\\}|${apiName})\\s+from`, 'g');
 			if (!importRegex.test(text)) {
 				const firstImport = text.indexOf('import');
@@ -28,7 +25,6 @@ export class ServiceCodeManager {
 				editBuilder.insert(pos, `${importStatement}\n`);
 			}
 
-			// Find insertion point (start of class, after constructor if exists)
 			const insertionPosition = this.findInsertionPosition(document);
 			editBuilder.insert(insertionPosition, `\n\t${methodCode}\n`);
 		});
@@ -44,75 +40,64 @@ export class ServiceCodeManager {
 		const text = document.getText();
 		const marker = `// @api-method: ${apiName}.${methodName}`;
 
-		// Strategy 1: Find by marker
-		const startIndex = text.indexOf(marker);
-
-		if (startIndex !== -1) {
-			// Find the end of the method block
-			let braceCount = 0;
-			let methodEndOffset = -1;
-			const startSearch = text.indexOf('{', startIndex);
-			if (startSearch !== -1) {
-				for (let i = startSearch; i < text.length; i++) {
-					if (text[i] === '{') braceCount++;
-					else if (text[i] === '}') {
-						braceCount--;
-						if (braceCount === 0) {
-							methodEndOffset = i + 1;
-							break;
-						}
-					}
-				}
-			}
-
-			if (methodEndOffset !== -1) {
-				await this.deleteRangeAndCleanImportsAsync(editor, startIndex, methodEndOffset, apiName);
-			}
-			return;
-		}
-
-		// Strategy 2: Find by method signature (fallback for manual implementations)
-		// Try: async [prefix]MethodNameAsync (
-		// Construct potential names
 		const possibleNames = [
 			`${methodName}Async`, // Standard
 			`${apiName.charAt(0).toLowerCase() + apiName.slice(1)}${methodName.charAt(0).toUpperCase() + methodName.slice(1)}Async`, // Prefixed
 		];
 
-		for (const name of possibleNames) {
-			// Regex: async name (...
-			const regex = new RegExp(`async\\s+${name}\\s*\\(`, 'g');
-			const match = regex.exec(text);
-			if (match) {
-				const startPos = match.index;
-				// Find start of line to be clean
-				const lineStart = text.lastIndexOf('\n', startPos) + 1;
-
-				// Find closing brace
-				let braceCount = 0;
-				let foundStartBrace = false;
-				let methodEndOffset = -1;
-
-				for (let i = startPos; i < text.length; i++) {
-					if (text[i] === '{') {
-						braceCount++;
-						foundStartBrace = true;
-					}
-					else if (text[i] === '}') {
-						braceCount--;
-						if (foundStartBrace && braceCount === 0) {
-							methodEndOffset = i + 1;
-							break;
-						}
-					}
-				}
-
-				if (methodEndOffset !== -1) {
-					await this.deleteRangeAndCleanImportsAsync(editor, lineStart, methodEndOffset, apiName);
-					return; // Found and deleted
-				}
+		// Strategy 1: Find by marker
+		const markerIndex = text.indexOf(marker);
+		if (markerIndex !== -1) {
+			const rangeWithMarker = this.findMethodRangeByNames(document, possibleNames, marker);
+			if (rangeWithMarker) {
+				await this.deleteRangeAndCleanImportsAsync(editor, rangeWithMarker.start, rangeWithMarker.end, apiName);
+				return;
 			}
 		}
+
+		// Strategy 2: Find by method signature (fallback for manual implementations)
+		const range = this.findMethodRangeByNames(document, possibleNames);
+		if (range) {
+			await this.deleteRangeAndCleanImportsAsync(editor, range.start, range.end, apiName);
+		}
+	}
+
+	private static findMethodRangeByNames (
+		document: vscode.TextDocument,
+		possibleNames: string[],
+		marker?: string,
+	): { start: number, end: number } | null {
+		const text = document.getText();
+		const sourceFile = ts.createSourceFile(
+			document.fileName,
+			text,
+			ts.ScriptTarget.Latest,
+			true,
+			ts.ScriptKind.TS,
+		);
+
+		const findMethod = (node: ts.Node): ts.MethodDeclaration | null => {
+			if (ts.isMethodDeclaration(node) && node.name && ts.isIdentifier(node.name)) {
+				const name = node.name.getText(sourceFile);
+				if (possibleNames.includes(name)) {
+					if (marker) {
+						const leadingText = text.slice(node.getFullStart(), node.getStart());
+						if (leadingText.includes(marker)) {
+							return node;
+						}
+						// Keep searching for the specific marker match
+					}
+					else {
+						return node;
+					}
+				}
+			}
+			return ts.forEachChild(node, findMethod) ?? null;
+		};
+
+		const found = findMethod(sourceFile);
+		if (!found) return null;
+		return { start: found.getFullStart(), end: found.getEnd() };
 	}
 
 	private static async deleteRangeAndCleanImportsAsync (
@@ -131,19 +116,6 @@ export class ServiceCodeManager {
 		await editor.edit((editBuilder) => {
 			editBuilder.delete(range);
 
-			// Check if this was the last method for this API
-			// We need to simulate the text after deletion to check for conflicts
-			// A simple heuristic: check if the api name appears elsewhere in the file (excluding import)
-			// But simpler: just check if other @api-method comments or API usages exist?
-			// Usages are hard to track accurately without AST after edit.
-			// Let's stick to the generated comment pattern or just leave the import if unsure to avoid breaking code.
-
-			// Original logic checked for comments. Now that we support non-comment methods,
-			// checking for imports removal is riskier.
-			// However, we can perform a safe check:
-			// If no other "// @api-method: ApiName." exists AND no "ApiName." usage text exists
-			// But "ApiName." might be in the part we just deleted.
-
 			const textBefore = text.substring(0, startIndex);
 			const textAfter = text.substring(endIndex);
 			const cleanText = textBefore + textAfter;
@@ -152,7 +124,6 @@ export class ServiceCodeManager {
 				!cleanText.includes(`// @api-method: ${apiName}.`)
 				&& !cleanText.includes(`${apiName}.`) // simplistic usage check
 			) {
-				// Try to find and remove import
 				const importRegex = new RegExp(`import\\s+(?:\\{[^}]*\\b${apiName}\\b[^}]*\\}|${apiName})\\s+from`, 'g');
 				const match = importRegex.exec(cleanText);
 				if (match) {
@@ -160,14 +131,7 @@ export class ServiceCodeManager {
 					const __lineEnd = cleanText.indexOf('\n', importStart);
 					const importEnd = __lineEnd !== -1 ? __lineEnd + 1 : cleanText.length;
 
-					// We need to map cleanText indices back to original document positions?
-					// No, we can just find the import in the original document, provided start index hasn't shifted?
-					// Wait, we are in the same edit callback. We can't query the new text easily.
-					// BUT we can use the original indices if the import appears BEFORE the deleted method.
-					// If it appears AFTER, we need to adjust. Imports are usually at the top.
-
 					if (importStart < startIndex) {
-						// Safe to delete using original indices
 						editBuilder.delete(new vscode.Range(
 							document.positionAt(importStart),
 							document.positionAt(importEnd),
@@ -180,8 +144,9 @@ export class ServiceCodeManager {
 	}
 
 	private static generateMethodBoilerplate (apiName: string, method: ApiMethod, methodName: string): string {
+		const returnType = this.normalizeReturnType(method.returnType);
 		return `// @api-method: ${apiName}.${method.name}
-	static async ${methodName} (${method.params}): Promise<${method.returnType}> {
+	static async ${methodName} (${method.params}): ${returnType} {
 		return ${apiName}.${method.name}(${this.extractParamNames(method.params)});
 	}`;
 	}
@@ -189,16 +154,10 @@ export class ServiceCodeManager {
 	private static determineMethodName (text: string, apiName: string, method: ApiMethod): string {
 		const baseName = `${method.name}Async`;
 
-		// Check for collision
-		// simple check: if the method name appears in the text followed by (
-		// A more robust check works be parsing, but simple string matching is often enough for this context
 		const collisionRegex = new RegExp(`\\b${baseName}\\s*\\(`, 'g');
 
 		if (collisionRegex.test(text)) {
-			// Collision detected, apply prefix
-			// ProductApi -> productApi
 			const apiPrefix = apiName.charAt(0).toLowerCase() + apiName.slice(1);
-			// getDetail -> GetDetail
 			const methodSuffix = method.name.charAt(0).toUpperCase() + method.name.slice(1);
 			return `${apiPrefix}${methodSuffix}Async`;
 		}
@@ -207,59 +166,67 @@ export class ServiceCodeManager {
 	}
 
 	private static extractParamNames (params: string): string {
-		if (!params) return '';
-		return params.split(',')
-			.map(p => p.split(':')[0].split('=')[0].trim()) // handle default values and types
+		if (!params || !params.trim()) return '';
+		const sourceFile = ts.createSourceFile(
+			'__temp.ts',
+			`function __f(${params}) {}`,
+			ts.ScriptTarget.Latest,
+			true,
+			ts.ScriptKind.TS,
+		);
+		const statement = sourceFile.statements.find(ts.isFunctionDeclaration);
+		if (!statement) return '';
+		return statement.parameters
+			.map(param => param.name.getText(sourceFile))
 			.join(', ');
+	}
+
+	private static normalizeReturnType (returnType: string): string {
+		const trimmed = returnType.trim();
+		if (/^Promise\s*<.+>$/.test(trimmed)) {
+			return trimmed;
+		}
+		return `Promise<${trimmed || 'any'}>`;
 	}
 
 	private static findInsertionPosition (document: vscode.TextDocument): vscode.Position {
 		const text = document.getText();
-		// Find class opening brace
-		const classBraceIndex = text.indexOf('{', text.indexOf('class'));
+		const sourceFile = ts.createSourceFile(
+			document.fileName,
+			text,
+			ts.ScriptTarget.Latest,
+			true,
+			ts.ScriptKind.TS,
+		);
+
+		const classDecl = sourceFile.statements.find(ts.isClassDeclaration);
+		if (!classDecl) return new vscode.Position(0, 0);
+
+		let constructorNode: ts.ConstructorDeclaration | null = null;
+		let lastApiMethod: ts.MethodDeclaration | null = null;
+
+		for (const member of classDecl.members) {
+			if (ts.isConstructorDeclaration(member)) {
+				constructorNode = member;
+			}
+			else if (ts.isMethodDeclaration(member)) {
+				const ranges = ts.getLeadingCommentRanges(text, member.getFullStart()) ?? [];
+				const hasMarker = ranges.some(range =>
+					text.slice(range.pos, range.end).includes('// @api-method:'),
+				);
+				if (hasMarker) {
+					lastApiMethod = member;
+				}
+			}
+		}
+
+		const targetNode = lastApiMethod ?? constructorNode;
+		if (targetNode) {
+			return document.positionAt(targetNode.getEnd());
+		}
+
+		const classBraceIndex = text.indexOf('{', classDecl.getStart());
 		if (classBraceIndex === -1) return new vscode.Position(0, 0);
-
-		// Find constructor if exists
-		const constructorIndex = text.indexOf('constructor');
-		if (constructorIndex !== -1) {
-			// Find end of constructor
-			let braceCount = 0;
-			let started = false;
-			for (let i = constructorIndex; i < text.length; i++) {
-				if (text[i] === '{') {
-					braceCount++;
-					started = true;
-				}
-				else if (text[i] === '}') {
-					braceCount--;
-					if (started && braceCount === 0) {
-						return document.positionAt(i + 1);
-					}
-				}
-			}
-		}
-
-		// Find last @api-method to keep them grouped
-		const lastApiMethodIndex = text.lastIndexOf('// @api-method:');
-		if (lastApiMethodIndex !== -1) {
-			// Find end of that method
-			let braceCount = 0;
-			let started = false;
-			for (let i = lastApiMethodIndex; i < text.length; i++) {
-				if (text[i] === '{') {
-					braceCount++;
-					started = true;
-				}
-				else if (text[i] === '}') {
-					braceCount--;
-					if (started && braceCount === 0) {
-						return document.positionAt(i + 1);
-					}
-				}
-			}
-		}
-
-		// Default: after class brace
 		return document.positionAt(classBraceIndex + 1);
 	}
 
