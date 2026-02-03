@@ -31,6 +31,10 @@ type SetupImportMatch = {
 
 export class OrionSetupDocsService {
 
+	private static isScriptFile (filePath: string): boolean {
+		return /\.tsx?$|\.d\.ts$/i.test(filePath);
+	}
+
 	private static isPublic (visibility?: SetupMemberVisibility): boolean {
 		return visibility === undefined || visibility === 'public';
 	}
@@ -174,7 +178,7 @@ export class OrionSetupDocsService {
 			compilerOptions,
 			ts.sys,
 		).resolvedModule?.resolvedFileName;
-		if (resolved && fs.existsSync(resolved)) {
+		if (resolved && fs.existsSync(resolved) && this.isScriptFile(resolved)) {
 			return resolved;
 		}
 
@@ -192,7 +196,8 @@ export class OrionSetupDocsService {
 			path.join(base, 'index.d.ts'),
 		];
 
-		return candidates.find(candidate => fs.existsSync(candidate)) ?? null;
+		const match = candidates.find(candidate => fs.existsSync(candidate)) ?? null;
+		return match && this.isScriptFile(match) ? match : null;
 	}
 
 	private static getMemberVisibility (member: ts.ClassElement): SetupMemberVisibility {
@@ -291,7 +296,13 @@ export class OrionSetupDocsService {
 			return null;
 		}
 
-		const fileContents = fs.readFileSync(resolved, 'utf8');
+		let fileContents: string;
+		try {
+			fileContents = fs.readFileSync(resolved, 'utf8');
+		}
+		catch {
+			return null;
+		}
 		const moduleSource = ts.createSourceFile(
 			resolved,
 			fileContents,

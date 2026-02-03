@@ -1,43 +1,73 @@
 # Orion UI Companion
 
-A VS Code companion extension to improve developer experience for Orion UI projects. It detects Orion UI components used in Vue SFC files and shows their props documentation.
+A VS Code companion extension to improve developer experience for Orion UI projects.
 
-## Features
+---
 
-- Sidebar view listing Orion components found in the active `.vue` file.
-- Component detail panel with props documentation.
-- Optional remote docs fetch with in-memory cache.
+## Service templates
 
-## Usage
+Use the command palette or the Explorer context menu under `src/services/**` to scaffold a new service from a template.
 
-1. Open a `.vue` file.
-2. Open the **Orion Components** view in the Explorer sidebar.
-3. Select a component to see its props documentation.
+### Naming conventions
 
-## Configuration
+The service name you enter is normalized into two values:
 
-- `orion.docsSource`: `remote` (default) or `bundled`.
-- `orion.docsBaseUrl`: Base URL for remote docs API. Default: `https://orion-ui.org`.
-- `orion.componentsList`: Optional override list of Orion component tags (kebab-case).
+- `__ServiceName__`: PascalCase with a single `Service` suffix (ex: `BillingService`).
+- `__serviceName__`: camelCase equivalent of `__ServiceName__` (ex: `billingService`).
 
-### Remote docs endpoint
+The extension shows a preview of these computed names before creating the file.
 
-The extension expects a JSON payload at:
+### Built-in template
 
-```
-{docsBaseUrl}/api/components/{componentName}.json
-```
+The built-in default template ships with the extension and is always available.
 
-The JSON should match:
+### Workspace templates
+
+You can add custom templates in `.orion/templates/services/**` next to your `src` folder. For example:
 
 ```
-{
-  "name": "orion-button",
-  "props": [
-    { "name": "variant", "type": "string", "description": "..." }
-  ]
+project-root/
+  src/
+  .orion/
+    templates/
+      services/
+        my-service.ts
+```
+
+Templates can include the `__ServiceName__` and `__serviceName__` placeholders, which are replaced during creation. For workspace templates, any unknown placeholders trigger prompts so you can provide values on the fly.
+
+### Default template source (example)
+
+Copy/paste and customize as needed. This example includes a custom placeholder `__CustomNote__` to demonstrate the prompt flow for user-defined values.
+
+```typescript
+/**
+ * @orion/template-name The name of your template
+ * @orion/template-desc The purpose of your template
+ */
+
+// __CustomNote__
+
+class __ServiceName__ {
 }
+
+// Singleton instance initialized only when first requested
+let __serviceName__Singleton: __ServiceName__;
+
+export function use__ServiceName__ (newInstance = false) {
+	if (newInstance) {
+		return new __ServiceName__();
+	}
+	else if (!__serviceName__Singleton) {
+		__serviceName__Singleton = new __ServiceName__();
+	}
+
+	return __serviceName__Singleton;
+}
+
 ```
+
+---
 
 ## Performance checks
 

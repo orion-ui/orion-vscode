@@ -16,7 +16,8 @@
   },
   "include": [
     "src/**/*.ts",
-    "scripts/**/*.ts"
+    "scripts/**/*.ts",
+    "resources/templates/**/*.ts"
   ],
   "exclude": [
     "node_modules",

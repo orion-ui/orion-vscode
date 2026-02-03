@@ -11,9 +11,11 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:vue"
+    "onLanguage:vue",
+    "onCommand:orion.createServiceFromTemplate",
+    "onStartupFinished"
   ],
-  "main": "./dist/extension.js",
+  "main": "./dist/src/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -72,6 +74,11 @@
         "command": "orion.revealApiMethod",
         "title": "Orion: Go to API Method",
         "icon": "$(symbol-method)"
+      },
+      {
+        "command": "orion.createServiceFromTemplate",
+        "title": "Orion: Create Service from Template",
+        "icon": "$(new-file)"
       }
     ],
     "menus": {
@@ -101,8 +108,28 @@
           "when": "view == orion.serviceApiHelper && viewItem == apiMethodUnimplemented",
           "group": "navigation"
         }
+      ],
+      "explorer/context": [
+        {
+          "submenu": "orion.explorer",
+          "when": "resourceScheme == file && explorerResourceIsFolder && resourcePath =~ /[\\/]src[\\/]services([\\/]|$)/",
+          "group": "navigation"
+        }
+      ],
+      "orion.explorer": [
+        {
+          "command": "orion.createServiceFromTemplate",
+          "when": "resourceScheme == file && explorerResourceIsFolder && resourcePath =~ /[\\/]src[\\/]services([\\/]|$)/",
+          "group": "navigation"
+        }
       ]
     },
+    "submenus": [
+      {
+        "id": "orion.explorer",
+        "label": "Orion"
+      }
+    ],
     "configuration": {
       "title": "Orion UI",
       "properties": {

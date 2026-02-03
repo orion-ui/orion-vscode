@@ -15,6 +15,8 @@
 
 - Shared helpers that can be reused across modules belong in `src/utils`.
 - Utilities should be pure when possible and not depend on VS Code APIs unless necessary.
+- Shared string helpers (like `capitalize`) belong in `src/utils/stringUtils.ts`.
+- Global or shared types required by tooling should live in `src/shims-app.d.ts` instead of exported utility types.
 
 ## Structure
 
