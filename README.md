@@ -4,6 +4,15 @@ A VS Code companion extension to improve developer experience for Orion UI proje
 
 ---
 
+## Component usage navigation
+
+The Orion Components view includes a **Component Usage** section when a `.vue` file is focused.
+
+- Left-click a usage item to navigate to the location in the active editor.
+- Right-click a usage item and choose **Open Component Usage Beside** to open it in a new editor column while keeping focus in the sidebar, so you can open multiple locations quickly.
+
+---
+
 ## Service templates
 
 Use the command palette or the Explorer context menu under `src/services/**` to scaffold a new service from a template.
@@ -76,6 +85,7 @@ Run a quick local benchmark:
 ```
 npm run perf
 ```
+
 
 ## Development
 

@@ -76,6 +76,21 @@
         "icon": "$(symbol-method)"
       },
       {
+        "command": "orion.revealComponentUsage",
+        "title": "Orion: Go to Component Usage",
+        "icon": "$(symbol-method)"
+      },
+      {
+        "command": "orion.openComponentUsageBeside",
+        "title": "Orion: Open Component Usage Beside",
+        "icon": "$(split-horizontal)"
+      },
+      {
+        "command": "orion.refreshComponentUsage",
+        "title": "Orion: Refresh Component Usage",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "orion.createServiceFromTemplate",
         "title": "Orion: Create Service from Template",
         "icon": "$(new-file)"
@@ -86,6 +101,16 @@
         {
           "command": "orion.showComponentDocs",
           "when": "view == orionComponentsView && viewItem == orionComponent",
+          "group": "inline"
+        },
+        {
+          "command": "orion.openComponentUsageBeside",
+          "when": "view == orionComponentsView && viewItem == orionUsageItem",
+          "group": "inline"
+        },
+        {
+          "command": "orion.refreshComponentUsage",
+          "when": "view == orionComponentsView && viewItem == orionUsageSection",
           "group": "inline"
         },
         {

@@ -42,4 +42,31 @@ suite('Orion components tree model', () => {
 		});
 		assert.strictEqual(detail.type, 'empty');
 	});
+
+	test('hides usage section when not visible', () => {
+		const node = OrionComponentsTreeModel.buildUsageSectionNode({
+			visible: false,
+			status: 'idle',
+			locations: [],
+		});
+		assert.strictEqual(node, null);
+	});
+
+	test('builds usage nodes when locations exist', () => {
+		const nodes = OrionComponentsTreeModel.buildUsageNodes({
+			visible: true,
+			status: 'ready',
+			locations: [{ uri: { fsPath: '/demo.vue', toString: () => 'file:///demo.vue' } as any, range: { start: { line: 0, character: 0 } } as any, lineText: '<Demo />' }],
+		});
+		assert.strictEqual(nodes[0].type, 'usageFile');
+	});
+
+	test('returns empty usage node when no locations', () => {
+		const nodes = OrionComponentsTreeModel.buildUsageNodes({
+			visible: true,
+			status: 'ready',
+			locations: [],
+		});
+		assert.strictEqual(nodes[0].type, 'usageEmpty');
+	});
 });

@@ -1,6 +1,8 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { OrionComponentDetector } from './core/OrionComponentDetector';
 import { OrionComponentRegistry } from './core/OrionComponentRegistry';
+import { OrionComponentUsageService } from './core/OrionComponentUsageService';
 import { ServiceCodeManager } from './core/ServiceCodeManager';
 import { ServiceImplementationScanner } from './core/ServiceImplementationScanner';
 import { OrionDocsProvider } from './providers/OrionDocsProvider';
@@ -14,11 +16,20 @@ import { ServiceTemplateService } from './core/ServiceTemplateService';
 const isVueDocument = (document: vscode.TextDocument): boolean =>
 	document.languageId === 'vue' || document.fileName.endsWith('.vue');
 
+const isPathWithin = (filePath: string, rootPath: string): boolean => {
+	const relative = path.relative(rootPath, filePath);
+	return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative);
+};
+
 export function activate (context: vscode.ExtensionContext): void {
 	try {
 		const docsProvider = new OrionDocsProvider();
 		const viewProvider = new OrionComponentsViewProvider(docsProvider);
 		const apiHelperProvider = new ServiceApiHelperView(context.extensionUri);
+		const usageCache = new Map<string, ComponentUsageLocation[]>();
+		let usageRefreshTimeout: ReturnType<typeof setTimeout> | undefined;
+		let usageSearchTokenSource: vscode.CancellationTokenSource | undefined;
+		let activeUsageDocument: vscode.TextDocument | undefined;
 
 		const treeView = vscode.window.createTreeView('orionComponentsView', { treeDataProvider: viewProvider });
 		const apiTreeView = vscode.window.createTreeView('orion.serviceApiHelper', { treeDataProvider: apiHelperProvider });
@@ -49,6 +60,75 @@ export function activate (context: vscode.ExtensionContext): void {
 			viewProvider.setComponents(result.components);
 		};
 
+		const updateUsageForDocumentAsync = async (
+			document?: vscode.TextDocument,
+			forceRefresh = false,
+		): Promise<void> => {
+			if (!document || !isVueDocument(document)) {
+				viewProvider.setUsageHidden();
+				activeUsageDocument = undefined;
+				return;
+			}
+
+			activeUsageDocument = document;
+
+			const identity = OrionComponentUsageService.resolveComponentIdentity(document);
+			if (!identity) {
+				viewProvider.setUsageResults([], 'No component context available.');
+				return;
+			}
+
+			const cacheKey = `${identity.name}:${document.uri.toString()}`;
+			if (forceRefresh) {
+				usageCache.delete(cacheKey);
+			}
+
+			const cached = usageCache.get(cacheKey);
+			if (cached) {
+				viewProvider.setUsageResults(cached, cached.length === 0 ? 'No usage locations found.' : undefined);
+				return;
+			}
+
+			usageSearchTokenSource?.cancel();
+			usageSearchTokenSource?.dispose();
+			usageSearchTokenSource = new vscode.CancellationTokenSource();
+			const token = usageSearchTokenSource.token;
+
+			viewProvider.setUsageLoading();
+
+			try {
+				const locations = await OrionComponentUsageService.findUsageLocationsAsync(document, token);
+				if (token.isCancellationRequested) {
+					return;
+				}
+
+				usageCache.set(cacheKey, locations);
+				if (locations.length === 0) {
+					viewProvider.setUsageResults([], 'No usage locations found.');
+					return;
+				}
+
+				viewProvider.setUsageResults(locations);
+			}
+			catch (error) {
+				if (token.isCancellationRequested) {
+					return;
+				}
+
+				viewProvider.setUsageError('Unable to resolve component usage.');
+			}
+		};
+
+		const scheduleUsageRefresh = (document?: vscode.TextDocument, forceRefresh = false): void => {
+			if (usageRefreshTimeout) {
+				clearTimeout(usageRefreshTimeout);
+			}
+
+			usageRefreshTimeout = setTimeout(() => {
+				void updateUsageForDocumentAsync(document, forceRefresh);
+			}, 250);
+		};
+
 		const updateApiImplementationsAsync = async (editor: vscode.TextEditor | undefined): Promise<void> => {
 			if (editor && ServiceImplementationScanner.isServiceFile(editor.document)) {
 				const methods = await ServiceImplementationScanner.getImplementedMethodsAsync(editor.document);
@@ -63,6 +143,10 @@ export function activate (context: vscode.ExtensionContext): void {
 		if (activeEditor) {
 			updateComponentsForDocument(activeEditor.document);
 			updateApiImplementationsAsync(activeEditor);
+			scheduleUsageRefresh(activeEditor.document);
+			if (isVueDocument(activeEditor.document)) {
+				activeUsageDocument = activeEditor.document;
+			}
 		}
 
 		context.subscriptions.push(
@@ -70,6 +154,10 @@ export function activate (context: vscode.ExtensionContext): void {
 				(editor: vscode.TextEditor | undefined) => {
 					updateComponentsForDocument(editor?.document);
 					updateApiImplementationsAsync(editor);
+					scheduleUsageRefresh(editor?.document, true);
+					if (editor && isVueDocument(editor.document)) {
+						activeUsageDocument = editor.document;
+					}
 				},
 			),
 		);
@@ -82,6 +170,39 @@ export function activate (context: vscode.ExtensionContext): void {
 					if (editor && editor.document === document) {
 						updateApiImplementationsAsync(editor);
 					}
+
+					const editorDocument = editor?.document;
+					const usageDocument = activeUsageDocument ?? (editorDocument && isVueDocument(editorDocument) ? editorDocument : undefined);
+					if (!usageDocument) {
+						return;
+					}
+
+					const searchRoot = OrionComponentUsageService.resolveNearestSrcRoot(usageDocument);
+					if (searchRoot && isPathWithin(document.uri.fsPath, searchRoot)) {
+						scheduleUsageRefresh(usageDocument, true);
+					}
+				},
+			),
+		);
+
+		context.subscriptions.push(
+			vscode.workspace.onDidChangeTextDocument(
+				(event: vscode.TextDocumentChangeEvent) => {
+					const editor = vscode.window.activeTextEditor;
+					if (!editor || !isVueDocument(editor.document)) {
+						return;
+					}
+
+					const searchRoot = OrionComponentUsageService.resolveNearestSrcRoot(editor.document);
+					if (!searchRoot) {
+						return;
+					}
+
+					if (!event.document.uri.fsPath.startsWith(searchRoot)) {
+						return;
+					}
+
+					scheduleUsageRefresh(editor.document, true);
 				},
 			),
 		);
@@ -97,6 +218,19 @@ export function activate (context: vscode.ExtensionContext): void {
 			vscode.commands.registerCommand('orion.refreshComponents', () => {
 				const editor = vscode.window.activeTextEditor;
 				updateComponentsForDocument(editor?.document);
+				scheduleUsageRefresh(editor?.document, true);
+			}),
+		);
+
+		context.subscriptions.push(
+			vscode.commands.registerCommand('orion.refreshComponentUsage', () => {
+				const editor = vscode.window.activeTextEditor;
+				const editorDocument = editor?.document;
+				const usageDocument = activeUsageDocument ?? (editorDocument && isVueDocument(editorDocument) ? editorDocument : undefined);
+				if (!usageDocument) {
+					return;
+				}
+				scheduleUsageRefresh(usageDocument, true);
 			}),
 		);
 
@@ -108,8 +242,6 @@ export function activate (context: vscode.ExtensionContext): void {
 
 		context.subscriptions.push(
 			vscode.commands.registerCommand('orion.createServiceFromTemplate', async (uri?: vscode.Uri) => {
-				console.clear();
-				console.log('ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ');
 				await ServiceTemplateService.createServiceFromTemplateAsync(context.extensionUri, uri);
 			}),
 		);
@@ -124,6 +256,47 @@ export function activate (context: vscode.ExtensionContext): void {
 				const position = document.positionAt(item.method.start);
 				const range = new vscode.Range(position, position);
 				editor.selection = new vscode.Selection(position, position);
+				editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+			}),
+		);
+
+		context.subscriptions.push(
+			vscode.commands.registerCommand('orion.revealComponentUsage', async (location: ComponentUsageLocation | undefined) => {
+				if (!location) {
+					return;
+				}
+
+				const document = await vscode.workspace.openTextDocument(location.uri.fsPath);
+				const editor = await vscode.window.showTextDocument(document, { preview: false });
+				const range = new vscode.Range(
+					new vscode.Position(location.range.start.line, location.range.start.character),
+					new vscode.Position(location.range.end.line, location.range.end.character),
+				);
+				editor.selection = new vscode.Selection(range.start, range.start);
+				editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+			}),
+		);
+
+		context.subscriptions.push(
+			vscode.commands.registerCommand('orion.openComponentUsageBeside', async (item: ComponentUsageLocation | { location?: ComponentUsageLocation } | undefined) => {
+				const resolvedLocation = item && typeof item === 'object' && 'location' in item
+					? (item as { location?: ComponentUsageLocation }).location
+					: item as ComponentUsageLocation | undefined;
+				if (!resolvedLocation) {
+					return;
+				}
+
+				const document = await vscode.workspace.openTextDocument(resolvedLocation.uri.fsPath);
+				const editor = await vscode.window.showTextDocument(document, {
+					preview: false,
+					preserveFocus: true,
+					viewColumn: vscode.ViewColumn.Beside,
+				});
+				const range = new vscode.Range(
+					new vscode.Position(resolvedLocation.range.start.line, resolvedLocation.range.start.character),
+					new vscode.Position(resolvedLocation.range.end.line, resolvedLocation.range.end.character),
+				);
+				editor.selection = new vscode.Selection(range.start, range.start);
 				editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
 			}),
 		);

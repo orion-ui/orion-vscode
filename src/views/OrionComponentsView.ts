@@ -3,7 +3,7 @@ import { OrionComponentsTreeModel } from '../core/OrionComponentsTreeModel';
 import type { OrionPropDoc } from '../core/OrionDocsService';
 import type { OrionDocsProvider } from '../providers/OrionDocsProvider';
 
-type OrionTreeItem = OrionComponentItem | OrionPropItem | OrionPropDescriptionItem | OrionEmptyItem;
+type OrionTreeItem = OrionComponentItem | OrionPropItem | OrionPropDescriptionItem | OrionUsageSectionItem | OrionUsageFileItem | OrionUsageItem | OrionEmptyItem;
 
 export class OrionComponentsViewProvider implements vscode.TreeDataProvider<OrionTreeItem> {
 
@@ -13,6 +13,11 @@ export class OrionComponentsViewProvider implements vscode.TreeDataProvider<Orio
 
 	private components: string[] = [];
 	private expandedComponents = new Set<string>();
+	private usageState: UsageSectionState = {
+		visible: false,
+		status: 'idle',
+		locations: [],
+	};
 
 	constructor (private readonly docsProvider: OrionDocsProvider) {}
 
@@ -25,6 +30,45 @@ export class OrionComponentsViewProvider implements vscode.TreeDataProvider<Orio
 		this.expandedComponents = new Set(
 			components.filter(component => this.expandedComponents.has(component)),
 		);
+		this.refresh();
+	}
+
+	setUsageHidden (): void {
+		this.usageState = {
+			visible: false,
+			status: 'idle',
+			locations: [],
+		};
+		this.refresh();
+	}
+
+	setUsageLoading (message?: string): void {
+		this.usageState = {
+			visible: true,
+			status: 'loading',
+			message,
+			locations: [],
+		};
+		this.refresh();
+	}
+
+	setUsageResults (locations: ComponentUsageLocation[], message?: string): void {
+		this.usageState = {
+			visible: true,
+			status: 'ready',
+			message,
+			locations,
+		};
+		this.refresh();
+	}
+
+	setUsageError (message: string): void {
+		this.usageState = {
+			visible: true,
+			status: 'error',
+			message,
+			locations: [],
+		};
 		this.refresh();
 	}
 
@@ -43,19 +87,40 @@ export class OrionComponentsViewProvider implements vscode.TreeDataProvider<Orio
 
 	getChildren (element?: OrionTreeItem): Promise<OrionTreeItem[]> {
 		if (!element) {
+			const usageSection = OrionComponentsTreeModel.buildUsageSectionNode(this.usageState);
+			const usageItems = usageSection
+				? [new OrionUsageSectionItem(usageSection.title)]
+				: [];
+
 			if (this.components.length === 0) {
 				const empty = new OrionEmptyItem('No Orion components detected');
 				empty.iconPath = new vscode.ThemeIcon('circle-slash');
-				return Promise.resolve([empty]);
+				return Promise.resolve([...usageItems, empty]);
 			}
 
-			return Promise.resolve(this.components.map(
-				component =>
-					new OrionComponentItem(
-						component,
-						this.expandedComponents.has(component),
-					),
+			return Promise.resolve([
+				...usageItems,
+				...this.components.map(
+					component =>
+						new OrionComponentItem(
+							component,
+							this.expandedComponents.has(component),
+						),
+				),
+			]);
+		}
+
+		if (element instanceof OrionUsageSectionItem) {
+			const usageNodes = OrionComponentsTreeModel.buildUsageNodes(this.usageState);
+			return Promise.resolve(usageNodes.map(node =>
+				node.type === 'usageEmpty'
+					? new OrionEmptyItem(node.message)
+					: new OrionUsageFileItem(node.filePath, node.locations),
 			));
+		}
+
+		if (element instanceof OrionUsageFileItem) {
+			return Promise.resolve(element.locations.map(location => new OrionUsageItem(location)));
 		}
 
 		if (element instanceof OrionComponentItem) {
@@ -133,6 +198,70 @@ export class OrionPropDescriptionItem extends vscode.TreeItem {
 		this.tooltip = description;
 		this.id = `orionPropDescription:${componentName}:${propName}`;
 		this.iconPath = new vscode.ThemeIcon('comment');
+	}
+
+}
+
+export class OrionUsageSectionItem extends vscode.TreeItem {
+
+	constructor (title: string) {
+		super(title, vscode.TreeItemCollapsibleState.Expanded);
+		this.contextValue = 'orionUsageSection';
+		this.id = 'orionUsageSection';
+		this.iconPath = new vscode.ThemeIcon('references');
+	}
+
+}
+
+export class OrionUsageItem extends vscode.TreeItem {
+
+	constructor (public readonly location: ComponentUsageLocation) {
+		super(OrionUsageItem.buildLabel(location), vscode.TreeItemCollapsibleState.None);
+		this.description = OrionUsageItem.buildDescription(location);
+		this.tooltip = location.lineText;
+		this.contextValue = 'orionUsageItem';
+		this.id = `orionUsage:${location.uri.toString()}:${location.range.start.line}:${location.range.start.character}`;
+		this.iconPath = new vscode.ThemeIcon('location');
+		this.command = {
+			command: 'orion.revealComponentUsage',
+			title: 'Go to Usage',
+			arguments: [location],
+		};
+	}
+
+	private static buildLabel (location: ComponentUsageLocation): string {
+		return location.lineText || `Line ${location.range.start.line + 1}`;
+	}
+
+	private static buildDescription (location: ComponentUsageLocation): string {
+		const lineNumber = location.range.start.line + 1;
+		return `Line ${lineNumber}`;
+	}
+
+}
+
+export class OrionUsageFileItem extends vscode.TreeItem {
+
+	constructor (public readonly filePath: string, public readonly locations: ComponentUsageLocation[]) {
+		super(
+			OrionUsageFileItem.buildLabel(filePath),
+			locations.length <= 10
+				? vscode.TreeItemCollapsibleState.Expanded
+				: vscode.TreeItemCollapsibleState.Collapsed,
+		);
+		this.contextValue = 'orionUsageFile';
+		this.id = `orionUsageFile:${filePath}`;
+		this.iconPath = vscode.ThemeIcon.File;
+	}
+
+	private static buildLabel (filePath: string): string {
+		const relativePath = vscode.workspace.asRelativePath(filePath).replace(/\\/g, '/');
+		const marker = 'src/';
+		const markerIndex = relativePath.indexOf(marker);
+		if (markerIndex >= 0) {
+			return relativePath.slice(markerIndex + marker.length);
+		}
+		return relativePath;
 	}
 
 }
