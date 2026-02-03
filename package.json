@@ -2,8 +2,9 @@
   "name": "orion-ui-vscode",
   "displayName": "Orion UI Companion",
   "description": "VSCode companion to improve DX for Orion UI projects.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "orion-ui",
+  "icon": "resources/orion.png",
   "repository": "https://github.com/orion-ui/orion-vscode",
   "license": "MIT",
   "engines": {
