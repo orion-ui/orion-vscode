@@ -2,7 +2,7 @@
   "name": "orion-ui-vscode",
   "displayName": "Orion UI Companion",
   "description": "VSCode companion to improve DX for Orion UI projects.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "orion-ui",
   "icon": "resources/orion.png",
   "repository": "https://github.com/orion-ui/orion-vscode",
@@ -18,7 +18,7 @@
     "onCommand:orion.createServiceFromTemplate",
     "onStartupFinished"
   ],
-  "main": "./dist/src/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -192,7 +192,9 @@
     }
   },
   "scripts": {
-    "compile": "tsc -p .",
+    "compile": "npm run bundle",
+    "typecheck": "tsc -p . --noEmit",
+    "bundle": "node scripts/bundle.js",
     "watch": "tsc -watch -p .",
     "lint": "eslint .",
     "test": "mocha -r ts-node/register src/test/suite/**/*.test.ts",
@@ -203,6 +205,7 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.11.30",
     "@types/vscode": "^1.89.0",
+    "esbuild": "^0.25.0",
     "eslint": "^9.0.0",
     "mocha": "^10.4.0",
     "ts-node": "^10.9.2"
