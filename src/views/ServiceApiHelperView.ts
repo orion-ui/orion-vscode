@@ -9,11 +9,9 @@ export class ServiceApiHelperView implements vscode.TreeDataProvider<ApiTreeItem
 
 	private apiFiles: ApiFile[] = [];
 	private implementedMethods: Set<string> = new Set(); // Key: ApiName.MethodName
-	private readonly extensionUri: vscode.Uri;
 	private groupCache: { implemented: ApiFile[], available: ApiFile[] } = { implemented: [], available: [] };
 
-	constructor (extensionUri: vscode.Uri) {
-		this.extensionUri = extensionUri;
+	constructor () {
 	}
 
 	refresh (): void {
@@ -77,7 +75,6 @@ export class ServiceApiHelperView implements vscode.TreeDataProvider<ApiTreeItem
 				element.apiFile.name,
 				method,
 				this.implementedMethods.has(`${element.apiFile.name}.${method.name}`),
-				this.extensionUri,
 				element.apiFile.isDefaultExport,
 				element.apiFile.path,
 			));
@@ -118,7 +115,6 @@ export class ApiMethodItem extends vscode.TreeItem {
 		public readonly apiName: string,
 		public readonly method: ApiMethod,
 		public readonly isImplemented: boolean,
-		public readonly extensionUri: vscode.Uri,
 		public readonly isDefaultExport: boolean,
 		public readonly apiFilePath: string,
 	) {
@@ -126,12 +122,7 @@ export class ApiMethodItem extends vscode.TreeItem {
 		this.description = method.params ? `(${method.params})` : '()';
 		this.tooltip = `${method.fullSignature}\n\n${isImplemented ? 'Already implemented in current service' : 'Not yet implemented'}`;
 		this.contextValue = isImplemented ? 'apiMethodImplemented' : 'apiMethodUnimplemented';
-
-		const iconName = isImplemented ? 'checkbox-checked.svg' : 'checkbox-unchecked.svg';
-		this.iconPath = {
-			light: vscode.Uri.joinPath(extensionUri, 'resources', iconName),
-			dark: vscode.Uri.joinPath(extensionUri, 'resources', iconName),
-		};
+		this.iconPath = new vscode.ThemeIcon(isImplemented ? 'check' : 'circle-large-outline');
 
 		this.command = {
 			command: isImplemented ? 'orion.removeApiMethod' : 'orion.implementApiMethod',

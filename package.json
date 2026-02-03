@@ -22,7 +22,7 @@
         {
           "id": "orion-architecture",
           "title": "Orion Architecture",
-          "icon": "resources/orion.svg"
+          "icon": "resources/orion.png"
         }
       ]
     },
@@ -31,14 +31,14 @@
         {
           "id": "orion.serviceApiHelper",
           "name": "Service API Helper",
-          "icon": "resources/orion.svg"
+          "icon": "resources/orion.png"
         }
       ],
       "explorer": [
         {
           "id": "orionComponentsView",
           "name": "Orion Components",
-          "icon": "resources/orion.svg"
+          "icon": "resources/orion.png"
         }
       ]
     },

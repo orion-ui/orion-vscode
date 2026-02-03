@@ -13,6 +13,24 @@ The Orion Components view includes a **Component Usage** section when a `.vue` f
 
 ---
 
+## Service API Helper view
+
+The Orion sidebar includes a **Service API Helper** tree view to assist when implementing services.
+
+### API list
+
+When the Orion sidebar is opened, the view lists API files found in `src/api/**/*Api.ts` (for example, `UserApi` and `ProductApi`).
+
+### API method accordion
+
+Each API entry can be expanded to show all available static or exported methods from the corresponding API file.
+
+### Contextual selection
+
+When you open a service file (for example `src/services/UserService.ts`), the view synchronizes to the active service and prepares the method implementation status accordingly.
+
+---
+
 ## Service templates
 
 Use the command palette or the Explorer context menu under `src/services/**` to scaffold a new service from a template.

@@ -25,7 +25,7 @@ export function activate (context: vscode.ExtensionContext): void {
 	try {
 		const docsProvider = new OrionDocsProvider();
 		const viewProvider = new OrionComponentsViewProvider(docsProvider);
-		const apiHelperProvider = new ServiceApiHelperView(context.extensionUri);
+		const apiHelperProvider = new ServiceApiHelperView();
 		const usageCache = new Map<string, ComponentUsageLocation[]>();
 		let usageRefreshTimeout: ReturnType<typeof setTimeout> | undefined;
 		let usageSearchTokenSource: vscode.CancellationTokenSource | undefined;
