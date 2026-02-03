@@ -4,6 +4,8 @@
   "description": "VSCode companion to improve DX for Orion UI projects.",
   "version": "0.0.1",
   "publisher": "orion-ui",
+  "repository": "https://github.com/orion-ui/orion-vscode",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.89.0"
   },
