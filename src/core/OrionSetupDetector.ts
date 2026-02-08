@@ -1,20 +1,11 @@
 import { parse as parseSfc } from '@vue/compiler-sfc';
 
-// eslint-disable-next-line orion-rules/no-export-type-in-ts
-export type SetupTokenSection = 'template' | 'script';
-
-export interface SetupTokenMatch {
-	offset: number
-	length: number
-	section: SetupTokenSection
-}
-
 export class OrionSetupDetector {
 
 	private static readonly setupToken = 'setup';
 
-	private static collectTemplateMatches (content: string, baseOffset: number): SetupTokenMatch[] {
-		const matches: SetupTokenMatch[] = [];
+	private static collectTemplateMatches (content: string, baseOffset: number): SetupDetector.Match[] {
+		const matches: SetupDetector.Match[] = [];
 		const regex = /\bsetup\./g;
 		let match: RegExpExecArray | null;
 		while ((match = regex.exec(content)) !== null) {
@@ -27,8 +18,8 @@ export class OrionSetupDetector {
 		return matches;
 	}
 
-	private static collectScriptMatches (content: string, baseOffset: number): SetupTokenMatch[] {
-		const matches: SetupTokenMatch[] = [];
+	private static collectScriptMatches (content: string, baseOffset: number): SetupDetector.Match[] {
+		const matches: SetupDetector.Match[] = [];
 		const regex = /\bconst\s+setup\s*=/g;
 		let match: RegExpExecArray | null;
 		while ((match = regex.exec(content)) !== null) {
@@ -42,9 +33,9 @@ export class OrionSetupDetector {
 		return matches;
 	}
 
-	static detectSetupTokens (sfcContent: string): SetupTokenMatch[] {
+	static detectSetupTokens (sfcContent: string): SetupDetector.Match[] {
 		const { descriptor } = parseSfc(sfcContent);
-		const matches: SetupTokenMatch[] = [];
+		const matches: SetupDetector.Match[] = [];
 
 		if (descriptor.template?.content && descriptor.template.loc) {
 			matches.push(
@@ -76,7 +67,7 @@ export class OrionSetupDetector {
 		return matches;
 	}
 
-	static findSetupTokenAtOffset (sfcContent: string, offset: number): SetupTokenMatch | null {
+	static findSetupTokenAtOffset (sfcContent: string, offset: number): SetupDetector.Match | null {
 		const matches = this.detectSetupTokens(sfcContent);
 		return matches.find(match => offset >= match.offset && offset <= match.offset + match.length) ?? null;
 	}

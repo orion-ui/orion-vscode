@@ -1,24 +1,37 @@
-type NormalizedServiceName = {
-	pascalName: string
-	camelName: string
-};
+declare global {
 
-type ComponentIdentity = {
-	name: string
-	kebabName: string
-	isShared: boolean
-	fileBaseName: string
-};
+	namespace Service {
+		type NormalizedName = {
+			pascalName: string
+			camelName: string
+		};
+	}
 
-type ComponentUsageLocation = {
-	uri: { fsPath: string, toString(): string }
-	range: { start: { line: number, character: number }, end: { line: number, character: number } }
-	lineText: string
-};
+	namespace Component {
+		type Identity = {
+			name: string
+			kebabName: string
+			isShared: boolean
+			fileBaseName: string
+		};
 
-type UsageSectionState = {
-	visible: boolean
-	status: 'idle' | 'loading' | 'ready' | 'error'
-	message?: string
-	locations: ComponentUsageLocation[]
-};
+		type UsageLocation = {
+			uri: { fsPath: string, toString(): string }
+			range: { start: { line: number, character: number }, end: { line: number, character: number } }
+			lineText: string
+		};
+	}
+
+	namespace SetupDetector {
+		type TargetSection = 'template' | 'script';
+
+		type Match = {
+			offset: number
+			length: number
+			section: TargetSection
+		};
+	}
+
+}
+
+export {};

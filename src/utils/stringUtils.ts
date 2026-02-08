@@ -36,3 +36,30 @@ export const toPascalCase = (value: string): string => {
 		.map(word => capitalize(word))
 		.join('');
 };
+
+export const toRgba = (color: string, alpha: number): string => {
+	const rgb = color.match(/^rgb\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+	if (rgb) {
+		const [, r, g, b] = rgb;
+		return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+	}
+
+	const rgba = color.match(/^rgba\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*([0-9.]+)\s*\)$/i);
+	if (rgba) {
+		const [, r, g, b] = rgba;
+		return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+	}
+
+	const hex = color.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+	if (hex) {
+		const value = hex[1].length === 3
+			? hex[1].split('').map(channel => channel + channel).join('')
+			: hex[1];
+		const r = parseInt(value.slice(0, 2), 16);
+		const g = parseInt(value.slice(2, 4), 16);
+		const b = parseInt(value.slice(4, 6), 16);
+		return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+	}
+
+	return color;
+};

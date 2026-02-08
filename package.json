@@ -23,14 +23,14 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "orion-architecture",
-          "title": "Orion Architecture",
+          "id": "orion-ui-companion",
+          "title": "Orion UI Companion",
           "icon": "resources/orion.png"
         }
       ]
     },
     "views": {
-      "orion-architecture": [
+      "orion-ui-companion": [
         {
           "id": "orion.serviceApiHelper",
           "name": "Service API Helper",
@@ -45,112 +45,9 @@
         }
       ]
     },
-    "commands": [
-      {
-        "command": "orion.refreshComponents",
-        "title": "Orion: Refresh Components"
-      },
-      {
-        "command": "orion.showComponentDocs",
-        "title": "Orion: Show Component Docs",
-        "icon": {
-          "light": "resources/globe.svg",
-          "dark": "resources/globe.svg"
-        }
-      },
-      {
-        "command": "orion.implementApiMethod",
-        "title": "Orion: Implement API Method",
-        "icon": "$(add)"
-      },
-      {
-        "command": "orion.removeApiMethod",
-        "title": "Orion: Remove API Method",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "orion.refreshApiViews",
-        "title": "Orion: Refresh API Views",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "orion.revealApiMethod",
-        "title": "Orion: Go to API Method",
-        "icon": "$(symbol-method)"
-      },
-      {
-        "command": "orion.revealComponentUsage",
-        "title": "Orion: Go to Component Usage",
-        "icon": "$(symbol-method)"
-      },
-      {
-        "command": "orion.openComponentUsageBeside",
-        "title": "Orion: Open Component Usage Beside",
-        "icon": "$(split-horizontal)"
-      },
-      {
-        "command": "orion.refreshComponentUsage",
-        "title": "Orion: Refresh Component Usage",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "orion.createServiceFromTemplate",
-        "title": "Orion: Create Service from Template",
-        "icon": "$(new-file)"
-      }
-    ],
+    "commands": [],
     "menus": {
-      "view/item/context": [
-        {
-          "command": "orion.showComponentDocs",
-          "when": "view == orionComponentsView && viewItem == orionComponent",
-          "group": "inline"
-        },
-        {
-          "command": "orion.openComponentUsageBeside",
-          "when": "view == orionComponentsView && viewItem == orionUsageItem",
-          "group": "inline"
-        },
-        {
-          "command": "orion.refreshComponentUsage",
-          "when": "view == orionComponentsView && viewItem == orionUsageSection",
-          "group": "inline"
-        },
-        {
-          "command": "orion.implementApiMethod",
-          "when": "view == orion.serviceApiHelper && viewItem == apiMethodUnimplemented",
-          "group": "inline"
-        },
-        {
-          "command": "orion.removeApiMethod",
-          "when": "view == orion.serviceApiHelper && viewItem == apiMethodImplemented",
-          "group": "inline"
-        },
-        {
-          "command": "orion.revealApiMethod",
-          "when": "view == orion.serviceApiHelper && viewItem == apiMethodImplemented",
-          "group": "navigation"
-        },
-        {
-          "command": "orion.revealApiMethod",
-          "when": "view == orion.serviceApiHelper && viewItem == apiMethodUnimplemented",
-          "group": "navigation"
-        }
-      ],
-      "explorer/context": [
-        {
-          "submenu": "orion.explorer",
-          "when": "resourceScheme == file && explorerResourceIsFolder && resourcePath =~ /[\\/]src[\\/]services([\\/]|$)/",
-          "group": "navigation"
-        }
-      ],
-      "orion.explorer": [
-        {
-          "command": "orion.createServiceFromTemplate",
-          "when": "resourceScheme == file && explorerResourceIsFolder && resourcePath =~ /[\\/]src[\\/]services([\\/]|$)/",
-          "group": "navigation"
-        }
-      ]
+      "view/item/context": []
     },
     "submenus": [
       {
@@ -161,28 +58,6 @@
     "configuration": {
       "title": "Orion UI",
       "properties": {
-        "orion.docsSource": {
-          "type": "string",
-          "enum": [
-            "remote",
-            "bundled"
-          ],
-          "default": "remote",
-          "description": "Source of Orion component documentation."
-        },
-        "orion.docsBaseUrl": {
-          "type": "string",
-          "default": "https://orion-ui.org",
-          "description": "Base URL for remote Orion docs API."
-        },
-        "orion.componentsList": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [],
-          "description": "Optional override list of Orion component tags (kebab-case)."
-        },
         "orion.setupHighlightColor": {
           "type": "string",
           "default": "rgb(156, 105, 252)",
