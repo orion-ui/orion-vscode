@@ -17,9 +17,7 @@ export class OrionComponentLocator {
 	async findComponentUsagesAsync () {
 		if (!this.componentName || !this.parentSrcUri) return [];
 
-		const activeFileUri = vscode.window.activeTextEditor?.document.uri.fsPath;
-		const usages: Utils.UsageLocation[] = [];
-
+		const activeFileUri = vscode.window.activeTextEditor?.document.uri;
 		const componentNamePascalCase = toPascalCase(this.componentName);
 		const componentNameKebabCase = toKebabCase(this.componentName);
 
@@ -27,25 +25,11 @@ export class OrionComponentLocator {
 		const results = await searchGlobalAsync(
 			searchPattern,
 			new vscode.RelativePattern(this.parentSrcUri.fsPath, '**/*.{vue,js,ts}'),
-			async (uri) => {
-				if (uri.fsPath === activeFileUri) return false; // Exclude the active file itself
-
-				const document = await vscode.workspace.openTextDocument(uri);
-				return document.getText().includes(componentNamePascalCase + '.vue'); // Quick check to filter files that likely import the component
-			},
+			'**/node_modules/**',
+			activeFileUri,
 		);
 
-		results.forEach((result) => {
-			usages.push({
-				uri: result.uri,
-				text: result.text,
-				line: result.line,
-				start: result.start,
-				end: result.end,
-			});
-		});
-
-		return usages;
+		return results;
 
 	}
 

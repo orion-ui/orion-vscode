@@ -11,38 +11,33 @@ export const getParentSrcUri = (uri: vscode.Uri) => {
 export const searchGlobalAsync = async (
 	pattern: RegExp,
 	include: vscode.RelativePattern,
-	filter: (uri: vscode.Uri) => Promise<boolean> = () => Promise.resolve(true),
 	exclude = '**/node_modules/**',
+	ignoreUri?: vscode.Uri,
 ) => {
-	// console.log('------------------');
-	// console.log(`🚀 ~ searchGlobalAsync ~ pattern:`, pattern);
-	// console.log(`🚀 ~ searchGlobalAsync ~ include:`, include);
-	const candidatesFiles = await vscode.workspace.findFiles(include, exclude);
-	const matchingFiles = [];
-	for (const file of candidatesFiles) {
-		if (await filter(file)) {
-			matchingFiles.push(file);
-		}
-	}
-
-	// console.log(`🚀 ~ searchGlobalAsync ~ matchingFiles:`, matchingFiles);
 	const results: Utils.UsageLocation[] = [];
+	const files = await vscode.workspace.findFiles(include, exclude);
+	const decoder = new TextDecoder('utf-8');
+	const linePattern = new RegExp(pattern.source, pattern.flags.replace('g', ''));
 
-	for (const file of matchingFiles) {
-		const document = await vscode.workspace.openTextDocument(file);
-		const text = document.getText();
+	for (const file of files) {
+		if (ignoreUri && file.fsPath === ignoreUri.fsPath) continue;
+
+		const data = await vscode.workspace.fs.readFile(file);
+		const text = decoder.decode(data);
 		const lines = text.split('\n');
 
 		lines.forEach((line, index) => {
-			if (pattern.test(line)) {
-				results.push({
-					uri: file,
-					text: line.trim(),
-					line: index,
-					start: line.indexOf(line.trim()),
-					end: line.indexOf(line.trim()) + line.trim().length,
-				});
-			}
+			const match = linePattern.exec(line);
+			if (!match) return;
+
+			const start = match.index;
+			results.push({
+				uri: file,
+				text: line.trim(),
+				line: index,
+				start,
+				end: start + match[0].length,
+			});
 		});
 	}
 
