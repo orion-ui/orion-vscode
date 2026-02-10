@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { isVueDocument } from '../utils/language.utils';
+import { isComponentSetupDocument, isVueDocument } from '../utils/language.utils';
 import { getParentSrcUri } from '../utils/workspace.utils';
 import { OrionComponentLocator } from '../core/OrionComponentLocator';
 
@@ -14,7 +14,8 @@ export class OrionComponentUsageProvider {
 	private get activeFileName () {
 		return this.activeFileUri
 			?.path.split('/').pop()
-			?.replace(/\.vue$/, '');
+			?.replace(/\.vue$/, '')
+			?.replace(/Setup(Service)?\.ts$/, '');
 	}
 
 	constructor (private context: vscode.ExtensionContext) {
@@ -58,7 +59,12 @@ export class OrionComponentUsageProvider {
 
 	private setActiveFileUri () {
 		const editor = vscode.window.activeTextEditor;
-		if (editor && isVueDocument(editor.document)) {
+		if (!editor) {
+			this.activeFileUri = undefined;
+			return;
+		}
+
+		if (isVueDocument(editor.document) || isComponentSetupDocument(editor.document)) {
 			this.activeFileUri = editor.document.uri;
 		}
 		else {

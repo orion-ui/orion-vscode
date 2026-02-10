@@ -4,6 +4,10 @@ export const isVueDocument = (document: vscode.TextDocument): boolean => {
 	return document.languageId === 'vue' || document.fileName.endsWith('.vue');
 };
 
+export const isComponentSetupDocument = (document: vscode.TextDocument): boolean => {
+	return document.languageId === 'typescript' || !!document.fileName.match(/Setup(Service)?\.ts$/);
+};
+
 export const isTypeScriptDocument = (document: vscode.TextDocument): boolean => {
 	return document.languageId === 'typescript' || document.fileName.endsWith('.ts');
 };

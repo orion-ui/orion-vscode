@@ -40,7 +40,7 @@
       "explorer": [
         {
           "id": "orion.componentUsageView",
-          "name": "Orion Components",
+          "name": "Component usage",
           "icon": "resources/orion.png"
         }
       ]
