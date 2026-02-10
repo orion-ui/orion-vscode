@@ -6,15 +6,15 @@ import { OrionComponentLocator } from '../core/OrionComponentLocator';
 export class OrionComponentUsageProvider {
 
 	private readonly targetView = 'orion.componentUsageView';
-	private activeFileUri: vscode.Uri | null = null;
-	private parentSrcUri: vscode.Uri | null = null;
+	private activeFileUri?: vscode.Uri;
+	private parentSrcUri?: vscode.Uri;
 	private orionComponentLocator = new OrionComponentLocator();
 	private treeProvider = new OrionComponentUsageTreeProvider();
 
 	private get activeFileName () {
 		return this.activeFileUri
 			?.path.split('/').pop()
-			?.replace('.vue', '');
+			?.replace(/\.vue$/, '');
 	}
 
 	constructor (private context: vscode.ExtensionContext) {
@@ -62,13 +62,13 @@ export class OrionComponentUsageProvider {
 			this.activeFileUri = editor.document.uri;
 		}
 		else {
-			this.activeFileUri = null;
+			this.activeFileUri = undefined;
 		}
 	}
 
 	private setParentSrcUri () {
 		if (!this.activeFileUri) {
-			this.parentSrcUri = null;
+			this.parentSrcUri = undefined;
 			return;
 		}
 
@@ -99,6 +99,7 @@ class OrionComponentUsageTreeProvider implements vscode.TreeDataProvider<UsageNo
 			);
 			item.contextValue = 'orionComponentUsageItem.file';
 			item.resourceUri = element.uri;
+			item.iconPath = vscode.ThemeIcon.File;
 			item.command = {
 				command: 'vscode.open',
 				title: 'Open',
@@ -110,10 +111,11 @@ class OrionComponentUsageTreeProvider implements vscode.TreeDataProvider<UsageNo
 		const item = new vscode.TreeItem(`Line ${element.line + 1}`, vscode.TreeItemCollapsibleState.None);
 		item.description = element.text;
 		item.contextValue = 'orionComponentUsageItem.line';
+		item.iconPath = new vscode.ThemeIcon('triangle-right');
 		item.command = {
 			command: 'vscode.open',
 			title: 'Open',
-			arguments: [element.uri, { selection: new vscode.Range(element.line, 0, element.line, 0) }],
+			arguments: [element.uri, { selection: new vscode.Range(element.line, element.start, element.line, element.end) }],
 		};
 		return item;
 	}
@@ -133,7 +135,7 @@ class OrionComponentUsageTreeProvider implements vscode.TreeDataProvider<UsageNo
 			const fileNode = existing ?? {
 				kind: 'file',
 				uri: usage.uri,
-				label: vscode.workspace.asRelativePath(usage.uri, false),
+				label: vscode.workspace.asRelativePath(usage.uri, false).replace(/^src\//, ''),
 				children: [],
 			};
 

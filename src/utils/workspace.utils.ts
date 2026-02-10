@@ -3,7 +3,8 @@ import * as vscode from 'vscode';
 export const getParentSrcUri = (uri: vscode.Uri) => {
 	const segments = uri.path.split('/');
 	const srcIndex = segments.lastIndexOf('src');
-	if (srcIndex === -1) return null;
+	if (srcIndex === -1) return;
+
 	const parentPath = segments.slice(0, srcIndex + 1).join('/');
 	return vscode.Uri.file(parentPath);
 };
@@ -13,6 +14,10 @@ export const searchGlobalAsync = async (
 	include: vscode.RelativePattern,
 	exclude = '**/node_modules/**',
 	ignoreUri?: vscode.Uri,
+	filters?: {
+		fileContentFilter?: (content: string, fileUri: vscode.Uri) => boolean
+		lineContentFilter?: (line: string, fileUri: vscode.Uri) => boolean
+	},
 ) => {
 	const results: Utils.UsageLocation[] = [];
 	const files = await vscode.workspace.findFiles(include, exclude);
@@ -26,7 +31,11 @@ export const searchGlobalAsync = async (
 		const text = decoder.decode(data);
 		const lines = text.split('\n');
 
+		if (filters?.fileContentFilter && !filters.fileContentFilter(text, file)) continue;
+
 		lines.forEach((line, index) => {
+			if (filters?.lineContentFilter && !filters.lineContentFilter(line, file)) return;
+
 			const match = linePattern.exec(line);
 			if (!match) return;
 

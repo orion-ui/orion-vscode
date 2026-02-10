@@ -21,16 +21,23 @@ export class OrionComponentLocator {
 		const componentNamePascalCase = toPascalCase(this.componentName);
 		const componentNameKebabCase = toKebabCase(this.componentName);
 
-		const searchPattern = new RegExp(`(?:\\b${componentNamePascalCase}\\b|<${componentNameKebabCase})\\b`, 'g');
+		const searchPattern = new RegExp(`(?:\\b${componentNamePascalCase}\\b|<${componentNameKebabCase}\\b[^-])`);
 		const results = await searchGlobalAsync(
 			searchPattern,
 			new vscode.RelativePattern(this.parentSrcUri.fsPath, '**/*.{vue,js,ts}'),
 			'**/node_modules/**',
 			activeFileUri,
+			{
+				fileContentFilter: (content, fileUri) => {
+					if (fileUri.fsPath.match(/\.(ts|js)$/)) {
+						return content.includes(`${componentNamePascalCase}.vue`);
+					}
+					return true;
+				},
+			},
 		);
 
 		return results;
-
 	}
 
 }
