@@ -1,4 +1,4 @@
-import { capitalize } from './stringUtils';
+import { capitalize } from './string.utils';
 
 const toWords = (value: string): string[] => {
 	return value

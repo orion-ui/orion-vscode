@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { OrionSetupDetector } from '../core/OrionSetupDetector';
-import { isVueDocument } from '../utils/languageUtils';
-import { toRgba } from '../utils/stringUtils';
+import { isVueDocument } from '../utils/language.utils';
+import { toRgba } from '../utils/string.utils';
 
 export class SetupHighlightProvider {
 
@@ -10,10 +10,10 @@ export class SetupHighlightProvider {
 
 	constructor (private context: vscode.ExtensionContext) {
 		this.decorationType = this.createSetupDecorationType();
-		this.registerSetupHighlighting();
+		this.register();
 	}
 
-	private registerSetupHighlighting () {
+	private register () {
 		this.context.subscriptions.push(this.decorationType);
 
 		this.updateDecorations(vscode.window.activeTextEditor);

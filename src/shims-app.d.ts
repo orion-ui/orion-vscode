@@ -1,4 +1,16 @@
+import { type Uri } from 'vscode';
+
 declare global {
+
+	namespace Utils {
+		type UsageLocation = {
+			uri: Uri
+			text: string
+			line: number
+			start: number
+			end: number
+		};
+	}
 
 	namespace Service {
 		type NormalizedName = {
@@ -15,10 +27,20 @@ declare global {
 			fileBaseName: string
 		};
 
-		type UsageLocation = {
-			uri: { fsPath: string, toString(): string }
-			range: { start: { line: number, character: number }, end: { line: number, character: number } }
-			lineText: string
+		type UsageFileNode = {
+			kind: 'file'
+			uri: vscode.Uri
+			label: string
+			children: UsageLineNode[]
+		};
+
+		type UsageLineNode = {
+			kind: 'line'
+			uri: vscode.Uri
+			text: string
+			line: number
+			start: number
+			end: number
 		};
 	}
 

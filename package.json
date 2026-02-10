@@ -39,15 +39,27 @@
       ],
       "explorer": [
         {
-          "id": "orionComponentsView",
+          "id": "orion.componentUsageView",
           "name": "Orion Components",
           "icon": "resources/orion.png"
         }
       ]
     },
-    "commands": [],
+    "commands": [
+      {
+        "command": "orion.openComponentUsageBeside",
+        "title": "Orion: Open Component Usage Beside",
+        "icon": "$(split-horizontal)"
+      }
+    ],
     "menus": {
-      "view/item/context": []
+      "view/item/context": [
+        {
+          "command": "orion.openComponentUsageBeside",
+          "when": "view == orion.componentUsageView && viewItem == orionComponentUsageItem.line",
+          "group": "inline"
+        }
+      ]
     },
     "submenus": [
       {
